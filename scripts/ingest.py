@@ -1,10 +1,10 @@
-"""Ingest orchestrator — inventory -> Wyzie search -> SRT -> normalize -> store.
+"""Ingest orchestrator — inventory -> subtitle search -> SRT -> normalize -> store.
 
 Usage:
   python scripts/ingest.py --pilot          # Avengers 2012 + Loki S01E01-02
   python scripts/ingest.py --movies         # all movies
   python scripts/ingest.py --series --slug loki_2021
-  python scripts/ingest.py --all            # everything (respects daily budget)
+  python scripts/ingest.py --all            # everything (resume-safe)
 """
 import argparse
 import logging
@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from src.config import settings  # noqa: E402
 from src.ingestion.normalize import normalize  # noqa: E402
 from src.ingestion.store import Store  # noqa: E402
-from src.ingestion.wyzie import SubtitleHit, WyzieBudgetExceeded, WyzieClient  # noqa: E402
+from src.ingestion.subtitlecat import SubtitlecatClient  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("ingest")
@@ -38,8 +38,24 @@ def doc_id_for(entry: dict, season: int | None, episode: int | None) -> str:
     return f"doc:{base}_s{season:02d}e{episode:02d}"
 
 
+def looks_like_wrong_content(doc_text: str, entry: dict) -> bool:
+    """Guard against wrong-show subtitle files: the title's distinctive words
+    (or the franchise marker 'marvel') should appear somewhere in the text."""
+    import re as _re
+
+    text = doc_text.lower()
+    words = [
+        w for w in _re.sub(r"[^a-z0-9 ]", " ", entry["title"].lower()).split()
+        if len(w) > 3 and w not in {"the", "and", "of"}
+    ]
+    if "marvel" in text or "stan lee" in text:
+        return False
+    # any distinctive title word appearing anywhere is a pass
+    return not any(w in text for w in words)
+
+
 def ingest_target(
-    client: WyzieClient,
+    client: SubtitlecatClient,
     store: Store,
     entry: dict,
     season: int | None,
@@ -47,36 +63,25 @@ def ingest_target(
 ) -> bool:
     document_id = doc_id_for(entry, season, episode)
     if store.has_document(document_id):
-        log.info("skip (stored): %s", document_id)
+        log.debug("skip (stored): %s", document_id)
         return True
 
-    hits = client.search(entry["imdb_id"], season, episode)
-    if not hits:
-        # may be ledger-skip or genuinely no subs; check ledger explicitly
-        target = entry["imdb_id"] if season is None else f"{entry['imdb_id']}/{season}/{episode}"
-        if client.already_searched(target):
-            log.info("skip (searched, no result stored): %s", target)
-            return True
-        log.warning("no hits: %s", target)
+    found = client.find_english_srt(entry["title"], entry["year"], season, episode)
+    if not found:
+        log.warning("no english srt found: %s", document_id)
         return False
-    hit = WyzieClient.pick_best(hits)
-
-    raw_dir = settings.RAW_DIR / entry["timeline_id"]
-    if season is None:
-        raw_path = raw_dir / f"{entry['slug']}.srt"
-    else:
-        raw_path = raw_dir / f"{entry['slug']}_s{season:02d}e{episode:02d}.srt"
-
-    try:
-        client.download(hit, raw_path)
-    except RuntimeError as e:
-        log.error("download failed %s: %s", document_id, e)
-        return False
+    raw_path, release = found
 
     content = raw_path.read_text(encoding="utf-8", errors="replace")
     cues, chunks = normalize(content, document_id)
     if not chunks:
         log.warning("no chunks after normalize: %s", document_id)
+        return False
+    full_text = " ".join(c.text for c in cues)
+    if looks_like_wrong_content(full_text, entry):
+        log.error("WRONG CONTENT guard tripped: %s (release %s) — purge & skip", document_id, release[:60])
+        raw_path.unlink(missing_ok=True)
+        client.invalidate(entry["title"], entry["year"], season, episode)
         return False
 
     store.upsert_document(
@@ -92,8 +97,8 @@ def ingest_target(
             "season": season,
             "episode": episode,
             "imdb_id": entry["imdb_id"],
-            "source": hit.source,
-            "release": hit.file_name,
+            "source": "subtitlecat",
+            "release": release,
             "cue_count": len(cues),
             "chunk_count": len(chunks),
             "ingested_at": datetime.now(timezone.utc).isoformat(),
@@ -115,22 +120,31 @@ def ingest_target(
             for c in chunks
         ],
     )
-    log.info("ingested %s: %d cues, %d chunks (%s)", document_id, len(cues), len(chunks), hit.file_name)
+    log.info("ingested %s: %d cues, %d chunks (%s)", document_id, len(cues), len(chunks), release[:60])
     return True
 
 
-def run(targets: list[tuple[dict, int | None, int | None]], client: WyzieClient, store: Store) -> None:
+def run(targets: list[tuple[dict, int | None, int | None]], client: SubtitlecatClient, store: Store,
+        refresh_miss: bool = False) -> None:
+    if refresh_miss:
+        import sqlite3
+
+        con = sqlite3.connect(store.path)
+        n = con.execute("DELETE FROM source_cache WHERE status = 'miss'").rowcount
+        con.commit()
+        con.close()
+        log.info("refreshed %d cached misses", n)
     done = failed = 0
     for entry, s, e in targets:
         try:
             ok = ingest_target(client, store, entry, s, e)
-        except WyzieBudgetExceeded as exc:
-            log.error("BUDGET STOP: %s — resume tomorrow with same command", exc)
-            break
+        except Exception as exc:
+            log.error("target error %s: %s", entry["slug"], exc)
+            ok = False
         done += 1 if ok else 0
         failed += 0 if ok else 1
-        time.sleep(1.0)
-    log.info("run complete: %d ok, %d failed, budget spent today: %d", done, failed, client.spent_today())
+        time.sleep(0.5)
+    log.info("run complete: %d ok, %d failed", done, failed)
 
 
 def build_targets(args: argparse.Namespace) -> list[tuple[dict, int | None, int | None]]:
@@ -144,7 +158,7 @@ def build_targets(args: argparse.Namespace) -> list[tuple[dict, int | None, int 
         if entry["type"] == "movie":
             targets.append((entry, None, None))
         else:
-            for s in entry.get("seasons", []):
+            for s in entry.get("seasons") or []:
                 for e in range(1, int(entry["episode_counts"][str(s)]) + 1):
                     targets.append((entry, s, e))
     if args.pilot:
@@ -164,17 +178,21 @@ def main() -> None:
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--slug", type=str, default=None)
     ap.add_argument("--no-animated", dest="animated", action="store_false")
+    ap.add_argument("--refresh-miss", action="store_true", help="retry cached subtitle misses")
     args = ap.parse_args()
 
-    client = WyzieClient()
+    if not (args.pilot or args.movies or args.series or args.all):
+        ap.error("choose one of --pilot / --movies / --series / --all")
+
     store = Store()
+    client = SubtitlecatClient()
     targets = build_targets(args)
     if args.movies:
         targets = [t for t in targets if t[0]["type"] == "movie"]
     if args.series:
         targets = [t for t in targets if t[0]["type"] == "series"]
-    log.info("targets: %d (budget spent today: %d)", len(targets), client.spent_today())
-    run(targets, client, store)
+    log.info("targets: %d", len(targets))
+    run(targets, client, store, refresh_miss=args.refresh_miss)
     log.info("store: %d docs, %d chunks", store.doc_count(), store.chunk_count())
 
 
