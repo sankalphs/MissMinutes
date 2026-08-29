@@ -1,0 +1,1449 @@
+[
+  {
+    "slug": "iron_man_2008",
+    "title": "Iron Man",
+    "year": 2008,
+    "type": "movie",
+    "imdb_id": "tt0371746",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "MCU phase 1",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "the_incredible_hulk_2008",
+    "title": "The Incredible Hulk",
+    "year": 2008,
+    "type": "movie",
+    "imdb_id": "tt0800080",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "iron_man_2_2010",
+    "title": "Iron Man 2",
+    "year": 2010,
+    "type": "movie",
+    "imdb_id": "tt1228705",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "thor_2011",
+    "title": "Thor",
+    "year": 2011,
+    "type": "movie",
+    "imdb_id": "tt0800369",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "captain_america_the_first_avenger_2011",
+    "title": "Captain America: The First Avenger",
+    "year": 2011,
+    "type": "movie",
+    "imdb_id": "tt0458339",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "the_avengers_2012",
+    "title": "The Avengers",
+    "year": 2012,
+    "type": "movie",
+    "imdb_id": "tt0848228",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "Battle of New York",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "iron_man_3_2013",
+    "title": "Iron Man 3",
+    "year": 2013,
+    "type": "movie",
+    "imdb_id": "tt1300854",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "thor_the_dark_world_2013",
+    "title": "Thor: The Dark World",
+    "year": 2013,
+    "type": "movie",
+    "imdb_id": "tt1981115",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "captain_america_the_winter_soldier_2014",
+    "title": "Captain America: The Winter Soldier",
+    "year": 2014,
+    "type": "movie",
+    "imdb_id": "tt1843866",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "guardians_of_the_galaxy_2014",
+    "title": "Guardians of the Galaxy",
+    "year": 2014,
+    "type": "movie",
+    "imdb_id": "tt2015381",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "avengers_age_of_ultron_2015",
+    "title": "Avengers: Age of Ultron",
+    "year": 2015,
+    "type": "movie",
+    "imdb_id": "tt2395427",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "ant_man_2015",
+    "title": "Ant-Man",
+    "year": 2015,
+    "type": "movie",
+    "imdb_id": "tt0478970",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "captain_america_civil_war_2016",
+    "title": "Captain America: Civil War",
+    "year": 2016,
+    "type": "movie",
+    "imdb_id": "tt3498820",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "doctor_strange_2016",
+    "title": "Doctor Strange",
+    "year": 2016,
+    "type": "movie",
+    "imdb_id": "tt1211837",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "guardians_of_the_galaxy_vol_2_2017",
+    "title": "Guardians of the Galaxy Vol. 2",
+    "year": 2017,
+    "type": "movie",
+    "imdb_id": "tt3896198",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "spider_man_homecoming_2017",
+    "title": "Spider-Man: Homecoming",
+    "year": 2017,
+    "type": "movie",
+    "imdb_id": "tt2250912",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "Sony co-produced, MCU",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "thor_ragnarok_2017",
+    "title": "Thor: Ragnarok",
+    "year": 2017,
+    "type": "movie",
+    "imdb_id": "tt3501632",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "black_panther_2018",
+    "title": "Black Panther",
+    "year": 2018,
+    "type": "movie",
+    "imdb_id": "tt1825683",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "avengers_infinity_war_2018",
+    "title": "Avengers: Infinity War",
+    "year": 2018,
+    "type": "movie",
+    "imdb_id": "tt4154756",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "ant_man_and_the_wasp_2018",
+    "title": "Ant-Man and the Wasp",
+    "year": 2018,
+    "type": "movie",
+    "imdb_id": "tt5095030",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "captain_marvel_2019",
+    "title": "Captain Marvel",
+    "year": 2019,
+    "type": "movie",
+    "imdb_id": "tt4154664",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "avengers_endgame_2019",
+    "title": "Avengers: Endgame",
+    "year": 2019,
+    "type": "movie",
+    "imdb_id": "tt4154796",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "verify: endgame is tt4154796? infinity war also tt4154796 — script must distinguish",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "spider_man_far_from_home_2019",
+    "title": "Spider-Man: Far From Home",
+    "year": 2019,
+    "type": "movie",
+    "imdb_id": "tt6320628",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "black_widow_2021",
+    "title": "Black Widow",
+    "year": 2021,
+    "type": "movie",
+    "imdb_id": "tt3480822",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "shang_chi_2021",
+    "title": "Shang-Chi and the Legend of the Ten Rings",
+    "year": 2021,
+    "type": "movie",
+    "imdb_id": "tt9376612",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "eternals_2021",
+    "title": "Eternals",
+    "year": 2021,
+    "type": "movie",
+    "imdb_id": "tt9032400",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "spider_man_no_way_home_2021",
+    "title": "Spider-Man: No Way Home",
+    "year": 2021,
+    "type": "movie",
+    "imdb_id": "tt10872600",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "doctor_strange_in_the_multiverse_of_madness_2022",
+    "title": "Doctor Strange in the Multiverse of Madness",
+    "year": 2022,
+    "type": "movie",
+    "imdb_id": "tt9419884",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "thor_love_and_thunder_2022",
+    "title": "Thor: Love and Thunder",
+    "year": 2022,
+    "type": "movie",
+    "imdb_id": "tt10648342",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "black_panther_wakanda_forever_2022",
+    "title": "Black Panther: Wakanda Forever",
+    "year": 2022,
+    "type": "movie",
+    "imdb_id": "tt9114286",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "ant_man_and_the_wasp_quantumania_2023",
+    "title": "Ant-Man and the Wasp: Quantumania",
+    "year": 2023,
+    "type": "movie",
+    "imdb_id": "tt10954600",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "guardians_of_the_galaxy_vol_3_2023",
+    "title": "Guardians of the Galaxy Vol. 3",
+    "year": 2023,
+    "type": "movie",
+    "imdb_id": "tt6791350",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "the_marvels_2023",
+    "title": "The Marvels",
+    "year": 2023,
+    "type": "movie",
+    "imdb_id": "tt10676048",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "deadpool_wolverine_2024",
+    "title": "Deadpool & Wolverine",
+    "year": 2024,
+    "type": "movie",
+    "imdb_id": "tt6263850",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "venom_the_last_dance_2024",
+    "title": "Venom: The Last Dance",
+    "year": 2024,
+    "type": "movie",
+    "imdb_id": "tt16366836",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "sony:ssu",
+    "canonical": true,
+    "animated": false,
+    "notes": "SSU",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "kraven_the_hunter_2024",
+    "title": "Kraven the Hunter",
+    "year": 2024,
+    "type": "movie",
+    "imdb_id": "tt8790086",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "sony:ssu",
+    "canonical": true,
+    "animated": false,
+    "notes": "SSU",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "captain_america_brave_new_world_2025",
+    "title": "Captain America: Brave New World",
+    "year": 2025,
+    "type": "movie",
+    "imdb_id": "tt14513804",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "thunderbolts_2025",
+    "title": "Thunderbolts*",
+    "year": 2025,
+    "type": "movie",
+    "imdb_id": "tt20969586",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "the_fantastic_four_first_steps_2025",
+    "title": "The Fantastic Four: First Steps",
+    "year": 2025,
+    "type": "movie",
+    "imdb_id": "tt10676052",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "wanda_vision_2021",
+    "title": "WandaVision",
+    "year": 2021,
+    "type": "series",
+    "imdb_id": "tt14094206",
+    "seasons": [
+      1
+    ],
+    "episode_counts": {
+      "1": 9
+    },
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "the_falcon_and_the_winter_soldier_2021",
+    "title": "The Falcon and the Winter Soldier",
+    "year": 2021,
+    "type": "series",
+    "imdb_id": "tt9208876",
+    "seasons": [
+      1
+    ],
+    "episode_counts": {
+      "1": 6
+    },
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "loki_2021",
+    "title": "Loki",
+    "year": 2021,
+    "type": "series",
+    "imdb_id": "tt9140554",
+    "seasons": [
+      1,
+      2
+    ],
+    "episode_counts": {
+      "1": 6,
+      "2": 6
+    },
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "TVA, branching",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "what_if_2021",
+    "title": "What If...?",
+    "year": 2021,
+    "type": "series",
+    "imdb_id": "tt10168312",
+    "seasons": [
+      1,
+      2,
+      3
+    ],
+    "episode_counts": {
+      "1": 9,
+      "2": 9,
+      "3": 8
+    },
+    "timeline_id": "whatif",
+    "canonical": false,
+    "animated": true,
+    "notes": "animated branches",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "hawkeye_2021",
+    "title": "Hawkeye",
+    "year": 2021,
+    "type": "series",
+    "imdb_id": "tt33499525",
+    "seasons": [
+      1
+    ],
+    "episode_counts": {
+      "1": 6
+    },
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "verify id",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "moon_knight_2022",
+    "title": "Moon Knight",
+    "year": 2022,
+    "type": "series",
+    "imdb_id": "tt19711558",
+    "seasons": [
+      1
+    ],
+    "episode_counts": {
+      "1": 6
+    },
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "ms_marvel_2022",
+    "title": "Ms. Marvel",
+    "year": 2022,
+    "type": "series",
+    "imdb_id": "tt10857164",
+    "seasons": [
+      1
+    ],
+    "episode_counts": {
+      "1": 6
+    },
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "i_am_groot_2022",
+    "title": "I Am Groot",
+    "year": 2022,
+    "type": "series",
+    "imdb_id": "tt13623148",
+    "seasons": [
+      1,
+      2
+    ],
+    "episode_counts": {
+      "1": 5,
+      "2": 5
+    },
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": true,
+    "notes": "animated shorts",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "she_hulk_attorney_at_law_2022",
+    "title": "She-Hulk: Attorney at Law",
+    "year": 2022,
+    "type": "series",
+    "imdb_id": "tt21833238",
+    "seasons": [
+      1
+    ],
+    "episode_counts": {
+      "1": 9
+    },
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "secret_invasion_2023",
+    "title": "Secret Invasion",
+    "year": 2023,
+    "type": "series",
+    "imdb_id": "tt13157618",
+    "seasons": [
+      1
+    ],
+    "episode_counts": {
+      "1": 6
+    },
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "echo_2024",
+    "title": "Echo",
+    "year": 2024,
+    "type": "series",
+    "imdb_id": "tt31106358",
+    "seasons": [
+      1
+    ],
+    "episode_counts": {
+      "1": 5
+    },
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "agatha_all_along_2024",
+    "title": "Agatha All Along",
+    "year": 2024,
+    "type": "series",
+    "imdb_id": "tt15571732",
+    "seasons": [
+      1
+    ],
+    "episode_counts": {
+      "1": 9
+    },
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "daredevil_born_again_2025",
+    "title": "Daredevil: Born Again",
+    "year": 2025,
+    "type": "series",
+    "imdb_id": "tt18923754",
+    "seasons": [
+      1
+    ],
+    "episode_counts": {
+      "1": 9
+    },
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "verify id",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "ironheart_2025",
+    "title": "Ironheart",
+    "year": 2025,
+    "type": "series",
+    "imdb_id": "tt13623126",
+    "seasons": [
+      1
+    ],
+    "episode_counts": {
+      "1": 6
+    },
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "eyes_of_wakanda_2025",
+    "title": "Eyes of Wakanda",
+    "year": 2025,
+    "type": "series",
+    "imdb_id": "tt13968252",
+    "seasons": [
+      1
+    ],
+    "episode_counts": {
+      "1": 4
+    },
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": true,
+    "notes": "animated; verify",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "marvel_zombies_2025",
+    "title": "Marvel Zombies",
+    "year": 2025,
+    "type": "series",
+    "imdb_id": "tt16027014",
+    "seasons": [
+      1
+    ],
+    "episode_counts": {
+      "1": 4
+    },
+    "timeline_id": "whatif",
+    "canonical": false,
+    "animated": true,
+    "notes": "animated; verify",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "wonder_man_2026",
+    "title": "Wonder Man",
+    "year": 2026,
+    "type": "series",
+    "imdb_id": "tt21066182",
+    "seasons": [
+      1
+    ],
+    "episode_counts": {
+      "1": 8
+    },
+    "timeline_id": "mcu",
+    "canonical": true,
+    "animated": false,
+    "notes": "verify release + id",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "spider_man_2002",
+    "title": "Spider-Man",
+    "year": 2002,
+    "type": "movie",
+    "imdb_id": "tt0145487",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "sony:rami",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "spider_man_2_2004",
+    "title": "Spider-Man 2",
+    "year": 2004,
+    "type": "movie",
+    "imdb_id": "tt0316654",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "sony:rami",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "spider_man_3_2007",
+    "title": "Spider-Man 3",
+    "year": 2007,
+    "type": "movie",
+    "imdb_id": "tt0413300",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "sony:rami",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "the_amazing_spider_man_2012",
+    "title": "The Amazing Spider-Man",
+    "year": 2012,
+    "type": "movie",
+    "imdb_id": "tt0948470",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "sony:webb",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "the_amazing_spider_man_2_2014",
+    "title": "The Amazing Spider-Man 2",
+    "year": 2014,
+    "type": "movie",
+    "imdb_id": "tt1872181",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "sony:webb",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "venom_2018",
+    "title": "Venom",
+    "year": 2018,
+    "type": "movie",
+    "imdb_id": "tt1270797",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "sony:ssu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "venom_let_there_be_carnage_2021",
+    "title": "Venom: Let There Be Carnage",
+    "year": 2021,
+    "type": "movie",
+    "imdb_id": "tt7097896",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "sony:ssu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "morbius_2022",
+    "title": "Morbius",
+    "year": 2022,
+    "type": "movie",
+    "imdb_id": "tt5108870",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "sony:ssu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "madame_web_2024",
+    "title": "Madame Web",
+    "year": 2024,
+    "type": "movie",
+    "imdb_id": "tt11057302",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "sony:ssu",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "spider_man_into_the_spider_verse_2018",
+    "title": "Spider-Man: Into the Spider-Verse",
+    "year": 2018,
+    "type": "movie",
+    "imdb_id": "tt4633694",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "sony:ssu",
+    "canonical": true,
+    "animated": true,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "spider_man_across_the_spider_verse_2023",
+    "title": "Spider-Man: Across the Spider-Verse",
+    "year": 2023,
+    "type": "movie",
+    "imdb_id": "tt9362722",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "sony:ssu",
+    "canonical": true,
+    "animated": true,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "x_men_2000",
+    "title": "X-Men",
+    "year": 2000,
+    "type": "movie",
+    "imdb_id": "tt0120903",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "fox:xmen",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "x2_x_men_united_2003",
+    "title": "X2",
+    "year": 2003,
+    "type": "movie",
+    "imdb_id": "tt0290334",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "fox:xmen",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "x_men_the_last_stand_2006",
+    "title": "X-Men: The Last Stand",
+    "year": 2006,
+    "type": "movie",
+    "imdb_id": "tt0376994",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "fox:xmen",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "x_men_origins_wolverine_2009",
+    "title": "X-Men Origins: Wolverine",
+    "year": 2009,
+    "type": "movie",
+    "imdb_id": "tt0458525",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "fox:xmen",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "the_wolverine_2013",
+    "title": "The Wolverine",
+    "year": 2013,
+    "type": "movie",
+    "imdb_id": "tt1430132",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "fox:xmen",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "x_men_first_class_2011",
+    "title": "X-Men: First Class",
+    "year": 2011,
+    "type": "movie",
+    "imdb_id": "tt1270798",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "fox:xmen",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "x_men_days_of_future_past_2014",
+    "title": "X-Men: Days of Future Past",
+    "year": 2014,
+    "type": "movie",
+    "imdb_id": "tt1877832",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "fox:xmen",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "x_men_apocalypse_2016",
+    "title": "X-Men: Apocalypse",
+    "year": 2016,
+    "type": "movie",
+    "imdb_id": "tt3385516",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "fox:xmen",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "dark_phoenix_2019",
+    "title": "Dark Phoenix",
+    "year": 2019,
+    "type": "movie",
+    "imdb_id": "tt6565702",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "fox:xmen",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "the_new_mutants_2020",
+    "title": "The New Mutants",
+    "year": 2020,
+    "type": "movie",
+    "imdb_id": "tt4682266",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "fox:xmen",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "deadpool_2016",
+    "title": "Deadpool",
+    "year": 2016,
+    "type": "movie",
+    "imdb_id": "tt1431045",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "fox:xmen",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "deadpool_2_2018",
+    "title": "Deadpool 2",
+    "year": 2018,
+    "type": "movie",
+    "imdb_id": "tt5463162",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "fox:xmen",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "logan_2017",
+    "title": "Logan",
+    "year": 2017,
+    "type": "movie",
+    "imdb_id": "tt3315342",
+    "seasons": null,
+    "episode_counts": {},
+    "timeline_id": "fox:xmen",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "agents_of_shield_2013",
+    "title": "Agents of S.H.I.E.L.D.",
+    "year": 2013,
+    "type": "series",
+    "imdb_id": "tt2364582",
+    "seasons": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "episode_counts": {
+      "1": 22,
+      "2": 22,
+      "3": 22,
+      "4": 22,
+      "5": 22,
+      "6": 13,
+      "7": 13
+    },
+    "timeline_id": "defenders",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "agent_carter_2015",
+    "title": "Agent Carter",
+    "year": 2015,
+    "type": "series",
+    "imdb_id": "tt3475734",
+    "seasons": [
+      1,
+      2
+    ],
+    "episode_counts": {
+      "1": 8,
+      "2": 10
+    },
+    "timeline_id": "defenders",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "inhumans_2017",
+    "title": "Inhumans",
+    "year": 2017,
+    "type": "series",
+    "imdb_id": "tt4154858",
+    "seasons": [
+      1
+    ],
+    "episode_counts": {
+      "1": 8
+    },
+    "timeline_id": "defenders",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "runaways_2017",
+    "title": "Runaways",
+    "year": 2017,
+    "type": "series",
+    "imdb_id": "tt1236246",
+    "seasons": [
+      1,
+      2,
+      3
+    ],
+    "episode_counts": {
+      "1": 10,
+      "2": 13,
+      "3": 10
+    },
+    "timeline_id": "defenders",
+    "canonical": true,
+    "animated": false,
+    "notes": "verify id",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "cloak_and_dagger_2018",
+    "title": "Cloak & Dagger",
+    "year": 2018,
+    "type": "series",
+    "imdb_id": "tt5614844",
+    "seasons": [
+      1,
+      2
+    ],
+    "episode_counts": {
+      "1": 10,
+      "2": 10
+    },
+    "timeline_id": "defenders",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "helstrom_2020",
+    "title": "Helstrom",
+    "year": 2020,
+    "type": "series",
+    "imdb_id": "tt10266874",
+    "seasons": [
+      1
+    ],
+    "episode_counts": {
+      "1": 10
+    },
+    "timeline_id": "defenders",
+    "canonical": false,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "daredevil_2015",
+    "title": "Daredevil",
+    "year": 2015,
+    "type": "series",
+    "imdb_id": "tt3322312",
+    "seasons": [
+      1,
+      2,
+      3
+    ],
+    "episode_counts": {
+      "1": 13,
+      "2": 13,
+      "3": 13
+    },
+    "timeline": null,
+    "timeline_id": "defenders",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "jessica_jones_2015",
+    "title": "Jessica Jones",
+    "year": 2015,
+    "type": "series",
+    "imdb_id": "tt2357547",
+    "seasons": [
+      1,
+      2,
+      3
+    ],
+    "episode_counts": {
+      "1": 13,
+      "2": 13,
+      "3": 13
+    },
+    "timeline_id": "defenders",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "luke_cage_2016",
+    "title": "Luke Cage",
+    "year": 2016,
+    "type": "series",
+    "imdb_id": "tt3322314",
+    "seasons": [
+      1,
+      2
+    ],
+    "episode_counts": {
+      "1": 13,
+      "2": 13
+    },
+    "timeline_id": "defenders",
+    "canonical": true,
+    "animated": false,
+    "notes": "verify id",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "iron_fist_2017",
+    "title": "Iron Fist",
+    "year": 2017,
+    "type": "series",
+    "imdb_id": "tt3322310",
+    "seasons": [
+      1,
+      2
+    ],
+    "episode_counts": {
+      "1": 13,
+      "2": 10
+    },
+    "timeline_id": "defenders",
+    "canonical": true,
+    "animated": false,
+    "notes": "verify id",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "the_defenders_2017",
+    "title": "The Defenders",
+    "year": 2017,
+    "type": "series",
+    "imdb_id": "tt4230076",
+    "seasons": [
+      1
+    ],
+    "episode_counts": {
+      "1": 8
+    },
+    "timeline_id": "defenders",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  },
+  {
+    "slug": "the_punisher_2017",
+    "title": "The Punisher",
+    "year": 2017,
+    "type": "series",
+    "imdb_id": "tt5675620",
+    "seasons": [
+      1,
+      2
+    ],
+    "episode_counts": {
+      "1": 13,
+      "2": 13
+    },
+    "timeline_id": "defenders",
+    "canonical": true,
+    "animated": false,
+    "notes": "",
+    "imdb_id_verified": true
+  }
+]
