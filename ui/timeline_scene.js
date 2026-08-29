@@ -29,7 +29,7 @@ const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matc
 
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance', preserveDrawingBuffer: true });
 } catch (e) {
   document.getElementById('fallback').hidden = false;
   throw e;
@@ -45,12 +45,13 @@ container.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(VOID, 0.02);      // far things sink into the void
 
-/* Camera: slightly above, off-axis — the spine reads as a diagonal. */
-const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 300);
-camera.position.set(-7.5, 4.6, 15.5);
+/* Camera: above and pitched down along the spine — it crosses the frame
+   as a full diagonal, near end low-left, far end high-right into depth. */
+const camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 0.1, 300);
+camera.position.set(-2, 7.5, 17);
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(1.5, 0.4, -2.5);
+controls.target.set(2, 2.2, -4);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.enablePan = false;
@@ -84,12 +85,12 @@ const GLOW = glowTexture();
 /* The Sacred Timeline — a horizontal filament receding into depth.    */
 /* ------------------------------------------------------------------ */
 const spineCurve = new THREE.CatmullRomCurve3([
-  new THREE.Vector3(-28, 2.4, 13),
-  new THREE.Vector3(-13, 1.3, 6),
-  new THREE.Vector3(-2, 0.6, 0),
-  new THREE.Vector3(9, -0.2, -7),
-  new THREE.Vector3(21, -1.3, -14),
-  new THREE.Vector3(30, -2.1, -19),
+  new THREE.Vector3(-24, 4.0, 10),
+  new THREE.Vector3(-12, 2.2, 4),
+  new THREE.Vector3(0, 0.9, 0),
+  new THREE.Vector3(12, -0.2, -4.5),
+  new THREE.Vector3(24, -1.4, -9),
+  new THREE.Vector3(33, -2.2, -13),
 ]);
 
 function tubeFor(curve, color, radius, opacity) {
@@ -102,8 +103,8 @@ function tubeFor(curve, color, radius, opacity) {
 }
 
 /* dual tube: bright thin core inside a soft gold sleeve */
-const spineCore = tubeFor(spineCurve, FILAMENT, 0.022, 0.95);
-const spineSleeve = tubeFor(spineCurve, GOLD, 0.085, 0.16);
+const spineCore = tubeFor(spineCurve, FILAMENT, 0.05, 0.95);
+const spineSleeve = tubeFor(spineCurve, GOLD, 0.16, 0.20);
 scene.add(spineSleeve, spineCore);
 
 /* a sparse whisper of light travelling the spine */
@@ -167,19 +168,23 @@ const spineFlow = flowFor(spineCurve, 0xffe9c4, 60, 0.008);
 scene.add(spineFlow);
 
 /* ------------------------------------------------------------------ */
-/* Branch timelines — they diverge upward, into depth, and quiet down. */
+/* Branch timelines — they diverge upward, into depth, and quiet down.  */
+/* Anatomy mirrors the corpus: the spine is the MCU (sacred); What If  */
+/* forks early; the street-level shows split mid-spine; the three Sony */
+/* lines (Rami / Webb / SSU) and the two Fox films pair as forks.     */
 /* ------------------------------------------------------------------ */
 const branchSpecs = [
-  { key: 'whatif', name: 'WHAT IF...?', t: 0.30, color: BRANCH, len: 1.0, dir: [-0.55, 1, 0.25] },
-  { key: 'fox', name: 'FOX', t: 0.43, color: BRANCH, len: 0.9, dir: [0.5, 1, -0.55] },
-  { key: 'sony', name: 'SONY', t: 0.56, color: BRANCH_DEEP, len: 0.75, dir: [-0.4, 1, -0.5] },
-  { key: 'defenders', name: 'DEFENDERS', t: 0.68, color: BRANCH_DEEP, len: 0.6, dir: [0.45, 1, 0.35] },
-  { key: 'pruned', name: 'PRUNED', t: 0.82, color: PRUNED, len: 0.28, dir: [0.2, -0.5, 0.15], pruned: true },
+  { key: 'whatif',      label: 'WHAT IF...?',                  t: 0.30, len: 0.85, dir: [-0.35, 0.5, 0.95], color: BRANCH },
+  { key: 'defenders',   label: 'THE DEFENDERS',                t: 0.38, len: 0.95, dir: [ 0.55, 0.7,  0.75], color: BRANCH },
+  { key: 'sony:rami',   label: "TOBEY MAGUIRE'S SPIDER-MAN",   t: 0.50, len: 0.80, dir: [-0.42, 0.5,  0.9 ], color: BRANCH_DEEP },
+  { key: 'sony:webb',   label: 'AMAZING SPIDER-MAN',          t: 0.56, len: 0.68, dir: [ 0.40, 0.45, 0.9 ], color: BRANCH_DEEP },
+  { key: 'sony:ssu',    label: 'SONY UNIVERSE · VENOM / MORBIUS', t: 0.62, len: 0.72, dir: [-0.25, 0.6,  0.8 ], color: BRANCH_DEEP },
+  { key: 'fox:xmen',    label: 'FOX X-MEN',                   t: 0.70, len: 0.62, dir: [ 0.35, 0.65, 0.7 ], color: BRANCH_DEEP },
+  { key: 'pruned',      label: 'A PRUNED BRANCH',              t: 0.84, len: 0.26, dir: [-0.10, -0.6, 0.18], color: PRUNED, pruned: true },
 ];
 
 const branches = [];
 const forkLights = [];
-const labelAnchors = [];
 
 for (const spec of branchSpecs) {
   const origin = spineCurve.getPointAt(spec.t);
@@ -192,7 +197,8 @@ for (const spec of branchSpecs) {
     origin.clone().addScaledVector(d, reach * 0.85).add(new THREE.Vector3(d.x * 2.4, 1.6, d.z * 2.4)),
   ];
   const curve = new THREE.CatmullRomCurve3(pts);
-  const tube = tubeFor(curve, spec.color, spec.pruned ? 0.018 : 0.032, spec.pruned ? 0.5 : 0.55);
+  const tube = tubeFor(curve, spec.color, spec.pruned ? 0.02 : 0.042, spec.pruned ? 0.5 : 0.6);
+  tube.userData.pick = spec.key;            // raycast target
   scene.add(tube);
 
   /* one small light at the fork — a temporal junction, nothing more */
@@ -206,13 +212,13 @@ for (const spec of branchSpecs) {
   scene.add(light);
 
   const tip = curve.getPointAt(0.92);
-  labelAnchors.push({ name: spec.name, pos: tip, pruned: !!spec.pruned });
-  branches.push({ spec, tube, curve, baseColor: new THREE.Color(spec.color) });
+  branches.push({ spec, tube, curve, tip, baseColor: new THREE.Color(spec.color), hover: 0, selected: false });
   forkLights.push({ light, spec });
 }
 
-/* the spine gets its own label */
-labelAnchors.push({ name: 'SACRED TIMELINE · MCU', pos: spineCurve.getPointAt(0.5).add(new THREE.Vector3(0, -1.1, 0)), spine: true });
+/* the spine is pickable too — it is the MCU */
+spineCore.userData.pick = 'mcu';
+spineSleeve.userData.pick = 'mcu';
 
 /* ------------------------------------------------------------------ */
 /* Stars — a few, faint, twinkling.                                    */
@@ -276,30 +282,88 @@ const stars = new THREE.Points(starGeom, starMat);
 scene.add(stars);
 
 /* ------------------------------------------------------------------ */
-/* Labels — small, unboxed, depth-faded, culled behind the camera.     */
+/* Labels — invisible until the pointer approaches a branch; clicking   */
+/* a branch selects that timeline for the search.                      */
 /* ------------------------------------------------------------------ */
-const labels = labelAnchors.map(({ name, pos, pruned, spine }) => {
+const labelSpecs = [
+  { key: 'mcu', text: 'SACRED TIMELINE · MCU', anchor: () => spineCurve.getPointAt(0.5).add(new THREE.Vector3(0, -1.2, 0)) },
+  ...branches.map((b) => ({ key: b.spec.key, text: b.spec.label, anchor: () => b.tip, pruned: !!b.spec.pruned })),
+];
+
+const labels = labelSpecs.map(({ key, text, pruned }) => {
   const el = document.createElement('div');
-  el.className = 'scene-label' + (pruned ? ' pruned' : '') + (spine ? ' spine' : '');
-  el.textContent = name;
+  el.className = 'scene-label' + (pruned ? ' pruned' : '') + (key === 'mcu' ? ' spine' : '');
+  el.textContent = text;
+  el.dataset.key = key;
   container.appendChild(el);
-  return { el, pos: pos.clone(), pruned, spine };
+  return { key, el, pruned, screen: null, reveal: 0, selected: false };
 });
 
+const pointer = { x: -1e4, y: -1e4 };
+container.addEventListener('pointermove', (e) => {
+  const r = renderer.domElement.getBoundingClientRect();
+  pointer.x = e.clientX - r.left;
+  pointer.y = e.clientY - r.top;
+});
+container.addEventListener('pointerleave', () => { pointer.x = -1e4; pointer.y = -1e4; });
+
+const LABEL_REVEAL_R = 130;   // px — proximity that reveals a label
 const v = new THREE.Vector3();
+
 function updateLabels() {
   for (const l of labels) {
-    v.copy(l.pos).project(camera);
+    const branch = branches.find((b) => b.spec.key === l.key);
+    const pos = l.key === 'mcu'
+      ? labelSpecs[0].anchor()
+      : branch.tip;
+    v.copy(pos).project(camera);
     const behind = v.z > 1;
     const x = (v.x * 0.5 + 0.5) * window.innerWidth;
     const y = (-v.y * 0.5 + 0.5) * window.innerHeight;
-    const offscreen = x < -60 || x > window.innerWidth + 60 || y < -20 || y > window.innerHeight + 20;
-    const dist = camera.position.distanceTo(l.pos);
-    const depthFade = THREE.MathUtils.clamp(1 - (dist - 14) / 52, 0.15, 0.85);
+    l.screen = behind ? null : { x, y };
+    const near = !behind && pointer.x > -9999 &&
+      Math.hypot(pointer.x - x, pointer.y - y) < LABEL_REVEAL_R;
+    l.reveal += ((near || l.selected) && !behind ? 1 : -1) * 0.12;
+    l.reveal = THREE.MathUtils.clamp(l.reveal, 0, 1);
+    const dist = camera.position.distanceTo(pos);
+    const depthFade = THREE.MathUtils.clamp(1 - (dist - 14) / 60, 0.2, 0.9);
     l.el.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
-    l.el.style.opacity = behind || offscreen ? '0' : String(depthFade);
+    l.el.style.opacity = behind ? '0' : String(l.reveal * depthFade);
   }
 }
+
+/* --- picking: hover a branch, click to select ------------------------ */
+const raycaster = new THREE.Raycaster();
+raycaster.params.Line = { threshold: 0.4 };
+const ndc = new THREE.Vector2();
+let hoverKey = null;
+let selectedKey = null;
+
+function pickAt(cx, cy) {
+  ndc.x = (cx / window.innerWidth) * 2 - 1;
+  ndc.y = -(cy / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(ndc, camera);
+  const targets = [spineCore, spineSleeve, ...branches.map((b) => b.tube)];
+  const hits = raycaster.intersectObjects(targets, false);
+  return hits.length ? hits[0].object.userData.pick : null;
+}
+
+container.addEventListener('pointermove', (e) => {
+  const r = renderer.domElement.getBoundingClientRect();
+  const key = pickAt(e.clientX - r.left, e.clientY - r.top);
+  hoverKey = key;
+  const clickable = key && key !== 'pruned';
+  container.style.cursor = clickable ? 'pointer' : '';
+});
+container.addEventListener('click', (e) => {
+  const r = renderer.domElement.getBoundingClientRect();
+  const key = pickAt(e.clientX - r.left, e.clientY - r.top);
+  if (!key || key === 'pruned') return;                 // pruned lines can't be searched
+  selectedKey = selectedKey === key ? null : key;       // second click clears
+  for (const l of labels) l.selected = l.key === selectedKey;
+  for (const l of labels) l.el.classList.toggle('selected', l.selected);
+  parent.postMessage({ type: 'timeline-select', timeline: selectedKey }, '*');
+});
 
 /* ------------------------------------------------------------------ */
 /* Highlight bridge — evidence rows warm a branch toward gold (SP3).   */
@@ -356,11 +420,24 @@ function tick() {
     light.material.opacity = reducedMotion ? base : base * (0.85 + Math.sin(elapsed * 0.8 + light.position.x) * 0.15);
   }
 
-  /* highlight lerp — branches drift toward gold and back */
+  /* branch state: selected holds gold, hovered brightens, evidence highlight warms */
   for (const b of branches) {
-    const active = highlighted === b.spec.key;
-    b.tube.material.color.lerp(active ? GOLD_HL : b.baseColor, active ? 0.06 : 0.03);
+    const isSel = selectedKey === b.spec.key;
+    const isHover = hoverKey === b.spec.key;
+    const isHi = highlighted === b.spec.key;
+    b.hover += ((isHover || isSel || isHi) ? 1 : -1) * 0.1;
+    b.hover = THREE.MathUtils.clamp(b.hover, 0, 1);
+    const target = isSel || isHi ? GOLD_HL : b.baseColor;
+    b.tube.material.color.lerp(target, isSel || isHi ? 0.08 : 0.05);
+    b.tube.material.opacity = (b.spec.pruned ? 0.5 : 0.55) + b.hover * 0.35;
   }
+  /* spine responds to selection/highlight too */
+  const spineActive = selectedKey === 'mcu' || highlighted === 'mcu' || !selectedKey;
+  spineCore.material.opacity = 0.95;
+
+  /* spine dims slightly when another timeline is selected */
+  spineCore.material.opacity = selectedKey && selectedKey !== 'mcu' && highlighted !== 'mcu' ? 0.55 : 0.95;
+  spineSleeve.material.opacity = selectedKey && selectedKey !== 'mcu' ? 0.10 : 0.16;
 
   controls.update();
   updateLabels();
@@ -372,3 +449,61 @@ document.addEventListener('visibilitychange', () => {
   renderer.setAnimationLoop(document.hidden ? null : tick);
   if (!document.hidden) clock.getDelta();
 });
+
+/* probe hook for art-direction verification: luminance grid + structure */
+window.__probe = () => {
+  const gl = renderer.getContext();
+  const W = gl.drawingBufferWidth, H = gl.drawingBufferHeight;
+  const px = new Uint8Array(W * H * 4);
+  gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, px);
+  // 24x10 luminance grid, plus global overexposure stats
+  const GX = 24, GY = 10;
+  const grid = [];
+  for (let gy = 0; gy < GY; gy++) {
+    const row = [];
+    for (let gx = 0; gx < GX; gx++) {
+      let sum = 0, n = 0, hot = 0;
+      for (let y = Math.floor(gy * H / GY); y < Math.floor((gy + 1) * H / GY); y += 4) {
+        for (let x = Math.floor(gx * W / GX); x < Math.floor((gx + 1) * W / GX); x += 4) {
+          const i = (y * W + x) * 4;
+          const a = px[i + 3] / 255;
+          if (a < 0.05) { continue; }
+          const r = px[i] / 255 * a, g = px[i + 1] / 255 * a, b = px[i + 2] / 255 * a;
+          const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          sum += lum; n++;
+          if (lum > 0.92) hot++;
+        }
+      }
+      row.push(n ? { lum: sum / n, hot: hot / n } : { lum: 0, hot: 0 });
+    }
+    grid.push(row);
+  }
+  let total = 0, hotTotal = 0;
+  for (let i = 0; i < W * H * 4; i += 4) {
+    const a = px[i + 3] / 255;
+    if (a < 0.05) continue;
+    const lum = (0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]) / 255 * a;
+    total++;
+    if (lum > 0.92) hotTotal++;
+  }
+  // structure: bright-column coverage (does a readable structure span the frame?)
+  const colBright = new Array(GX).fill(false);
+  for (let gx = 0; gx < GX; gx++) {
+    let hits = 0;
+    for (let gy = 0; gy < GY; gy++) {
+      if (grid[gy][gx].lum > 0.18) hits++;
+    }
+    colBright[gx] = hits >= 1;
+  }
+  let runs = [], run = 0;
+  for (let i = 0; i < GX; i++) {
+    if (colBright[i]) { run++; } else if (run) { runs.push(run); run = 0; }
+  }
+  if (run) runs.push(run);
+  return {
+    drawnPixels: total,
+    overexposedFrac: total ? hotTotal / total : 0,
+    longestBrightRun: Math.max(...runs, 0) + '/' + GX,
+    grid: grid.map(r => r.map(c => (c.lum > 0.55 ? '#' : c.lum > 0.30 ? '+' : c.lum > 0.12 ? '.' : ' ')).join('')).join('\n'),
+  };
+};

@@ -86,11 +86,22 @@ class VectorStore:
         return {"ok": True, "mode": mode, "collection": self.collection, "points": self.count()}
 
 
+_MODEL = None
+
+
+def _model():
+    """Load the embedding model once per process."""
+    global _MODEL
+    if _MODEL is None:
+        from sentence_transformers import SentenceTransformer
+
+        _MODEL = SentenceTransformer(settings.EMBEDDING_MODEL)
+    return _MODEL
+
+
 def embed_texts(texts: list[str]) -> list[list[float]]:
     """Embed with bge-small-en-v1.5 (384d). Loads model once per process."""
-    from sentence_transformers import SentenceTransformer
-
-    model = SentenceTransformer(settings.EMBEDDING_MODEL)
+    model = _model()
     vecs = model.encode(
         [f"passage: {t}" if len(t) < 2048 else f"passage: {t[:2048]}" for t in texts],
         normalize_embeddings=True,
@@ -100,9 +111,7 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
 
 
 def embed_query(text: str) -> list[float]:
-    from sentence_transformers import SentenceTransformer
-
-    model = SentenceTransformer(settings.EMBEDDING_MODEL)
+    model = _model()
     v = model.encode(f"query: {text}", normalize_embeddings=True, show_progress_bar=False)
     return v.tolist()
 

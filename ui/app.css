@@ -131,6 +131,21 @@ gradio-footer { display: none !important; }
   font-size: 11.5px;
 }
 
+/* hero interaction hint — bottom-right, whisper quiet */
+.hero-hint {
+  position: absolute;
+  right: clamp(24px, 4vw, 48px);
+  bottom: clamp(20px, 4vh, 36px);
+  z-index: 5;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  color: rgba(139, 147, 181, 0.5);
+  text-transform: uppercase;
+  pointer-events: none;
+  transition: opacity 1s ease;
+}
+
 #topbar .status {
   font-family: var(--mono);
   font-size: 10.5px;
@@ -370,6 +385,18 @@ gradio-footer { display: none !important; }
 
 /* timeline filter — the real dropdown, restyled to quiet mono text */
 #searchzone #timeline-filter { margin-top: 14px; }
+
+#selection-note {
+  margin-top: 10px;
+  min-height: 14px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--gold);
+  text-transform: uppercase;
+  text-align: center;
+  transition: opacity 0.4s ease;
+}
 
 #timeline-filter {
   background: transparent !important;

@@ -58,6 +58,18 @@ html, body {
 .scene-label.spine { color: rgba(217, 164, 91, 0.9); }
 .scene-label.pruned { color: rgba(201, 85, 58, 0.75); }
 
+/* selected branch — the label stays out, gold, with a quiet ring */
+.scene-label.selected {
+  color: rgba(237, 201, 143, 1);
+  text-shadow: 0 0 12px rgba(217, 164, 91, 0.45);
+}
+.scene-label.selected::after {
+  content: "✕";
+  margin-left: 8px;
+  font-size: 8px;
+  opacity: 0.6;
+}
+
 /* --- fallback -------------------------------------------------------- */
 #fallback {
   position: absolute;

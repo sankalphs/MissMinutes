@@ -30,12 +30,41 @@ HEAD = """
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+/* branch click -> timeline selection, synced with the dropdown */
+window.addEventListener('message', function (e) {
+  var d = e.data;
+  if (!d || d.type !== 'timeline-select') return;
+  var sel = document.getElementById('selection-note');
+  var map = { mcu: 'MCU', whatif: 'WhatIf', 'sony:rami': 'Sony: Rami',
+              'sony:webb': 'Sony: Webb', 'sony:ssu': 'Sony: SSU',
+              'fox:xmen': 'Fox: X-Men', defenders: 'Defenders' };
+  var pretty = { mcu: 'MCU', whatif: 'What If...?', 'sony:rami': "Tobey Maguire's Spider-Man",
+                 'sony:webb': 'Amazing Spider-Man', 'sony:ssu': 'Sony Universe — Venom · Morbius',
+                 'fox:xmen': 'Fox X-Men', defenders: 'The Defenders' };
+  var box = document.querySelector('#timeline-filter input');
+  if (!d.timeline) {
+    if (sel) sel.textContent = '';
+    if (box) {
+      box.value = 'All timelines';
+      box.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    return;
+  }
+  if (sel) sel.textContent = 'SCOPE · ' + (pretty[d.timeline] || d.timeline).toUpperCase();
+  if (box) {
+    box.value = map[d.timeline] || d.timeline;
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+});
+</script>
 """
 
 SCENE_IFRAME = """
 <div id="hero" aria-label="The Sacred Timeline, with branch timelines diverging into deep space">
   <iframe src="/scene" title="The Sacred Timeline — a cinematic view of the branching timelines"
           loading="eager" allow="fullscreen"></iframe>
+  <div class="hero-hint">HOVER A BRANCH — CLICK TO SCOPE YOUR SEARCH TO THAT TIMELINE</div>
   <div class="brandblock">
     <h1>MISS<br/>MINUTES</h1>
     <p class="tagline">the multiverse archive</p>
@@ -48,6 +77,17 @@ TIMELINES = [
     "All timelines", "MCU", "WhatIf", "Sony: Rami", "Sony: Webb",
     "Sony: SSU", "Fox: X-Men", "Defenders",
 ]
+
+# scene branch key -> dropdown label (click-to-select bridge)
+KEY_TO_TIMELINE = {
+    "mcu": "MCU",
+    "whatif": "WhatIf",
+    "sony:rami": "Sony: Rami",
+    "sony:webb": "Sony: Webb",
+    "sony:ssu": "Sony: SSU",
+    "fox:xmen": "Fox: X-Men",
+    "defenders": "Defenders",
+}
 
 TOPBAR = """
 <div id="topbar">
@@ -195,6 +235,7 @@ def build_app() -> gr.Blocks:
                 show_label=False,
                 elem_id="timeline-filter",
             )
+            gr.HTML("<div id='selection-note'></div>")
 
         with gr.Column(elem_id="examples"):
             gr.HTML("<div class='ex-label'>Try exploring</div>")
