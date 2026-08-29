@@ -17,7 +17,7 @@ Output ONLY JSON:
  "reference_event": str|null,
  "timeline": str|null,
  "temporal_constraint": str|null}
-Timeline must be one of: "mcu", "whatif", "sony:rami", "sony:webb", "sony:ssu", "fox:xmen", "defenders" or null.
+Timeline must be one of: "mcu", "whatif", "sony:rami", "sony:webb", "sony:ssu", "sony:spiderverse", "fox:xmen", "fox:ff", "defenders" or null.
 If the question names an event and asks what happened after/before it, put the event in reference_event
 and use next_events/prev_events."""
 
@@ -38,7 +38,8 @@ class QueryPlan(BaseModel):
     ] = "free_search"
     reference_event: str | None = None
     timeline: Literal[
-        "mcu", "whatif", "sony:rami", "sony:webb", "sony:ssu", "fox:xmen", "defenders"
+        "mcu", "whatif", "sony:rami", "sony:webb", "sony:ssu", "sony:spiderverse",
+        "fox:xmen", "fox:ff", "defenders"
     ] | None = None
     temporal_constraint: str | None = None
 

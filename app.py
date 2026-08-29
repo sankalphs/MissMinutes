@@ -37,14 +37,27 @@ window.addEventListener('message', function (e) {
   if (!d || d.type !== 'timeline-select') return;
   var sel = document.getElementById('selection-note');
   var pretty = { mcu: 'MCU', whatif: 'What If...?', 'sony:rami': "Tobey Maguire's Spider-Man",
-                 'sony:webb': 'Amazing Spider-Man', 'sony:ssu': 'Sony Universe — Venom · Morbius',
-                 'fox:xmen': 'Fox X-Men', defenders: 'The Defenders' };
+                 'sony:webb': 'Amazing Spider-Man', 'sony:ssu': 'Sony Universe — Venom · Morbius · Kraven',
+                 'sony:spiderverse': 'Spider-Verse (animated)', 'fox:xmen': 'Fox X-Men',
+                 'fox:ff': 'Fox Fantastic Four', defenders: 'The Defenders' };
   if (sel) sel.textContent = d.timeline ? 'SCOPE · ' + (pretty[d.timeline] || d.timeline).toUpperCase() : '';
   var box = document.querySelector('#scope-tb textarea');
   if (box) {
     box.value = d.timeline || '';
     box.dispatchEvent(new Event('input', { bubbles: true }));
   }
+});
+/* evidence hover -> warm the matching branch in the hero (delegated: the
+   evidence list is re-rendered by gradio after every search) */
+document.addEventListener('mouseover', function (e) {
+  var chunk = e.target.closest ? e.target.closest('#evidence .chunk[data-timeline]') : null;
+  var hero = document.querySelector('#hero iframe');
+  if (chunk && hero) hero.contentWindow.postMessage({ type: 'highlight', branch: chunk.dataset.timeline }, '*');
+});
+document.addEventListener('mouseout', function (e) {
+  var chunk = e.target.closest ? e.target.closest('#evidence .chunk[data-timeline]') : null;
+  var hero = document.querySelector('#hero iframe');
+  if (chunk && hero) hero.contentWindow.postMessage({ type: 'highlight', branch: null }, '*');
 });
 </script>
 """
@@ -64,7 +77,7 @@ SCENE_IFRAME = """
 
 TIMELINES = [
     "All timelines", "MCU", "WhatIf", "Sony: Rami", "Sony: Webb",
-    "Sony: SSU", "Fox: X-Men", "Defenders",
+    "Sony: SSU", "Sony: Spider-Verse", "Fox: X-Men", "Fox: FF", "Defenders",
 ]
 
 # scene branch key -> dropdown label (click-to-select bridge)
@@ -74,9 +87,16 @@ KEY_TO_TIMELINE = {
     "sony:rami": "Sony: Rami",
     "sony:webb": "Sony: Webb",
     "sony:ssu": "Sony: SSU",
+    "sony:spiderverse": "Sony: Spider-Verse",
     "fox:xmen": "Fox: X-Men",
+    "fox:ff": "Fox: FF",
     "defenders": "Defenders",
 }
+
+
+# dropdown label -> canonical timeline key the pipeline understands
+LABEL_TO_KEY = {v: k for k, v in KEY_TO_TIMELINE.items()}
+LABEL_TO_KEY["All timelines"] = None
 
 
 def scope_from_scene(key: str):
@@ -101,23 +121,34 @@ EXAMPLES = [
     "Which Spider-Man universes exist?",
 ]
 
-# evidence title -> 3D branch key (kept at this adapter boundary)
+# evidence title -> 3D branch key (kept at this adapter boundary).
+# Branch keys mirror the corpus taxonomy exactly.
 BRANCH_KEYS = {
-    "whatif": "whatif", "what if": "whatif",
-    "fox": "fox", "x-men": "fox", "xmen": "fox",
-    "sony": "sony", "spider": "sony", "spider-man": "sony", "spiderman": "sony",
-    "defenders": "defenders", "daredevil": "defenders", "jessica jones": "defenders",
-    "luke cage": "defenders", "iron fist": "defenders", "punisher": "defenders",
-    "mcu": "mcu",
+    "what if": "whatif", "what if...?": "whatif", "marvel zombies": "whatif",
+    "x-men": "fox:xmen", "x2 ": "fox:xmen", "x2:": "fox:xmen",
+    "deadpool": "fox:xmen", "logan": "fox:xmen", "wolverine": "fox:xmen",
+    "new mutants": "fox:xmen", "dark phoenix": "fox:xmen",
+    "fantastic four": "fox:ff", "fant4stic": "fox:ff",
+    "spider-man": "sony:rami", "spider-man 2": "sony:rami", "spider-man 3": "sony:rami",
+    "amazing spider-man": "sony:webb",
+    "venom": "sony:ssu", "morbius": "sony:ssu", "kraven": "sony:ssu",
+    "madame web": "sony:ssu", "el muerto": "sony:ssu",
+    "spider-verse": "sony:spiderverse", "across the spider-verse": "sony:spiderverse",
+    "beyond the spider-verse": "sony:spiderverse",
+    "daredevil": "defenders", "jessica jones": "defenders", "luke cage": "defenders",
+    "iron fist": "defenders", "punisher": "defenders", "defenders": "defenders",
 }
 
 
 def _branch_key(title: str) -> str:
-    t = title.lower()
+    """Map an evidence document title to its 3D branch (longest match wins).
+    Unmatched titles are MCU — the sacred spine."""
+    t = (title or "").lower()
+    best, best_len = "", 0
     for frag, key in BRANCH_KEYS.items():
-        if frag in t:
-            return key
-    return ""
+        if frag in t and len(frag) > best_len:
+            best, best_len = key, len(frag)
+    return best or "mcu"
 
 
 def _ev_row(i: int, c: dict) -> str:
@@ -161,7 +192,7 @@ def search_and_answer(question: str, timeline: str):
 
         plan = parse_query(llm, question)
         if timeline and timeline != "All timelines":
-            plan.timeline = timeline.lower()
+            plan.timeline = LABEL_TO_KEY.get(timeline)
 
         ranked = hybrid_search(store, vs, graph, question, plan)
         result = generate_answer(llm, question, ranked)

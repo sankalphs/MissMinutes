@@ -173,14 +173,32 @@ scene.add(spineFlow);
 /* forks early; the street-level shows split mid-spine; the three Sony */
 /* lines (Rami / Webb / SSU) and the two Fox films pair as forks.     */
 /* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ */
+/* Branch timelines — every branch distinct, forks where history says.  */
+/*                                                                     */
+/* Fork points follow real-world chronology (when each universe first  */
+/* hit screens and diverged from what became the Sacred Timeline):    */
+/*   2000 Fox X-Men · 2002 Raimi Spider-Man · 2005 Fox Fantastic Four  */
+/*   2012 Amazing Spider-Man · 2015 street-level Defenders            */
+/*   2018 SSU (Venom) · 2018 Spider-Verse · 2021 What If...?           */
+/*                                                                     */
+/* Branch length encodes archive holdings (documents ingested):        */
+/*   defenders 295 · mcu 144 (spine) · whatif 28 · fox:xmen 13 ·       */
+/*   sony:ssu 8 (incl. Spider-Verse) · rami 3 · webb 2                 */
+/*                                                                     */
+/* fox:ff is a real universe the archive doesn't hold yet — visible,   */
+/* hover-labeled, but not selectable. The pruned stub is atmosphere.   */
+/* ------------------------------------------------------------------ */
 const branchSpecs = [
-  { key: 'whatif',      label: 'WHAT IF...?',                  t: 0.32, len: 0.85, dir: [ 0.28, 0.6, 0.75], color: BRANCH },
-  { key: 'defenders',   label: 'THE DEFENDERS',                t: 0.38, len: 0.95, dir: [ 0.55, 0.7,  0.75], color: BRANCH },
-  { key: 'sony:rami',   label: "TOBEY MAGUIRE'S SPIDER-MAN",   t: 0.50, len: 0.80, dir: [-0.42, 0.5,  0.9 ], color: BRANCH_DEEP },
-  { key: 'sony:webb',   label: 'AMAZING SPIDER-MAN',          t: 0.56, len: 0.68, dir: [ 0.40, 0.45, 0.9 ], color: BRANCH_DEEP },
-  { key: 'sony:ssu',    label: 'SONY UNIVERSE · VENOM / MORBIUS', t: 0.62, len: 0.72, dir: [-0.25, 0.6,  0.8 ], color: BRANCH_DEEP },
-  { key: 'fox:xmen',    label: 'FOX X-MEN',                   t: 0.70, len: 0.62, dir: [ 0.35, 0.65, 0.7 ], color: BRANCH_DEEP },
-  { key: 'pruned',      label: 'A PRUNED BRANCH',              t: 0.84, len: 0.26, dir: [-0.10, -0.6, 0.18], color: PRUNED, pruned: true },
+  { key: 'fox:xmen',         label: 'FOX X-MEN',                      t: 0.20, len: 0.80, dir: [ 0.45,  0.80, -0.25], color: BRANCH },
+  { key: 'sony:rami',        label: "TOBEY MAGUIRE'S SPIDER-MAN",      t: 0.28, len: 0.38, dir: [ 0.60,  0.75,  0.10], color: BRANCH_DEEP },
+  { key: 'fox:ff',           label: 'FOX FANTASTIC FOUR',              t: 0.36, len: 0.42, dir: [-0.80,  0.30,  0.40], color: BRANCH_DEEP },
+  { key: 'sony:webb',        label: 'THE AMAZING SPIDER-MAN',          t: 0.47, len: 0.30, dir: [ 0.55,  0.80, -0.10], color: BRANCH_DEEP },
+  { key: 'defenders',        label: 'THE DEFENDERS',                   t: 0.57, len: 1.00, dir: [ 0.30, -0.85,  0.30], color: BRANCH_DEEP },
+  { key: 'sony:ssu',         label: 'SSU — VENOM · MORBIUS · KRAVEN',  t: 0.66, len: 0.55, dir: [ 0.80,  0.35, -0.30], color: BRANCH_DEEP },
+  { key: 'sony:spiderverse', label: 'SPIDER-VERSE (ANIMATED)',         t: 0.75, len: 0.48, dir: [-0.60,  0.45,  0.60], color: BRANCH },
+  { key: 'whatif',           label: 'WHAT IF...?',                     t: 0.84, len: 0.70, dir: [ 0.05,  0.90, -0.35], color: BRANCH },
+  { key: 'pruned',           label: 'A PRUNED BRANCH',                 t: 0.93, len: 0.22, dir: [-0.30, -0.70,  0.40], color: PRUNED, pruned: true },
 ];
 
 const branches = [];
@@ -392,7 +410,15 @@ let highlighted = null;
 const GOLD_HL = new THREE.Color(0xd9a45b);
 window.addEventListener('message', (e) => {
   const d = e.data;
-  if (d && d.type === 'highlight' && typeof d.branch === 'string') highlighted = d.branch || null;
+  if (d && d.type === 'highlight' && (typeof d.branch === 'string' || d.branch === null)) highlighted = d.branch || null;
+});
+
+/* debug/verification hook */
+window.__sceneState = () => ({
+  highlighted,
+  selected: selectedKey,
+  hover: hoverKey,
+  branchColors: Object.fromEntries(branches.map((b) => [b.spec.key, b.tube.material.color.getHexString()])),
 });
 
 /* ------------------------------------------------------------------ */

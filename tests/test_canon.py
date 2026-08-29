@@ -30,7 +30,7 @@ def test_imdb_ids_unique(inv: list[dict]) -> None:
 
 
 def test_timeline_ids_allowed(inv: list[dict]) -> None:
-    allowed = {"mcu", "whatif", "sony:rami", "sony:webb", "sony:ssu", "fox:xmen", "defenders"}
+    allowed = {"mcu", "whatif", "sony:rami", "sony:webb", "sony:ssu", "sony:spiderverse", "fox:xmen", "fox:ff", "defenders"}
     for e in inv:
         assert e["timeline_id"] in allowed, f"{e['slug']}: {e['timeline_id']}"
 
