@@ -26,6 +26,9 @@ _ALLOWED_OPERATIONS = {
     "between_events", "find_connection", "caused_by", "free_search",
 }
 
+TIMELINE_KEYS = {"mcu", "whatif", "sony:rami", "sony:webb", "sony:ssu",
+                 "sony:spiderverse", "fox:xmen", "fox:ff", "defenders"}
+
 
 class QueryPlan(BaseModel):
     entities: list[str] = Field(default_factory=list, max_length=6)
@@ -38,8 +41,8 @@ class QueryPlan(BaseModel):
     ] = "free_search"
     reference_event: str | None = None
     timeline: Literal[
-        "mcu", "whatif", "sony:rami", "sony:webb", "sony:ssu", "sony:spiderverse",
-        "fox:xmen", "fox:ff", "defenders"
+        "mcu", "whatif", "sony:rami", "sony:webb", "sony:ssu",
+        "sony:spiderverse", "fox:xmen", "fox:ff", "defenders"
     ] | None = None
     temporal_constraint: str | None = None
 

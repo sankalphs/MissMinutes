@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 def lexical_search(store: Store, plan: QueryPlan, limit: int = 10) -> list[dict]:
-    terms = plan.entities[:6]
+    terms = [_fts_safe(t) for t in plan.entities[:6]]
+    terms = [t for t in terms if t]
     if not terms:
         return []
     joined = " OR ".join(f'"{t}"' for t in terms)
@@ -26,17 +27,33 @@ def lexical_search(store: Store, plan: QueryPlan, limit: int = 10) -> list[dict]
         return []
 
 
+def _fts_safe(term: str) -> str:
+    """FTS5-safe: strip quote chars, keep alphanumerics/hyphens."""
+    import re
+
+    return re.sub(r"[^\w\s\-']", "", term).strip()
+
+
 def semantic_search(vs: VectorStore, plan: QueryPlan, query: str, limit: int = 10) -> list[dict]:
     try:
         vec = embed_query(query)
-        return vs.search(vec, limit=limit, timeline=plan.timeline)
+        hits = vs.search(vec, limit=limit, timeline=plan.timeline)
+        if not hits and plan.timeline:
+            # empty timeline (no docs on that branch) — fall back to all
+            hits = vs.search(vec, limit=limit, timeline=None)
+        return hits
     except Exception as e:
         logger.warning("semantic search failed: %s", e)
         return []
 
 
 def graph_search(graph: Graph, plan: QueryPlan, limit: int = 20) -> list[dict]:
-    """Resolve plan entities to graph nodes + traverse temporal edges."""
+    """Resolve plan entities to graph nodes + traverse temporal edges.
+
+    Temporal edges are stored canonically as BEFORE (a)-[:BEFORE]->(b) means
+    a happened before b. 'What happened after X' walks X<-[:BEFORE]-next;
+    'before X' walks X-[:BEFORE]->prev.
+    """
     results: list[dict] = []
     with graph.session() as s:
         for name in plan.entities[:4]:
@@ -52,13 +69,18 @@ def graph_search(graph: Graph, plan: QueryPlan, limit: int = 20) -> list[dict]:
             ).data()
             results.extend(rows)
         if plan.operation in ("next_events", "prev_events") and plan.reference_event:
-            direction = "BEFORE" if plan.operation == "next_events" else "AFTER"
+            # next_events: events AFTER the reference = incoming BEFORE edges
+            # prev_events: events BEFORE the reference = outgoing BEFORE edges
+            pattern = (
+                "(ref)-[:BEFORE*1..3]->(b)" if plan.operation == "next_events"
+                else "(b)-[:BEFORE*1..3]->(ref)"
+            )
             rows = s.run(
-                f"""MATCH (a:Event)-[:{direction}*1..4]->(b:Event)
-                    WHERE toLower(a.name) CONTAINS toLower($ref)
-                    RETURN b.id AS id, b.name AS name, 'Event' AS label,
+                f"""MATCH (ref:Event) WHERE toLower(ref.name) CONTAINS toLower($ref)
+                    MATCH {pattern}
+                    RETURN DISTINCT b.id AS id, b.name AS name, 'Event' AS label,
                            b.date_precision AS precision, b.date AS date
-                    ORDER BY coalesce(b.date, '9999') LIMIT $limit""",
+                    LIMIT $limit""",
                 ref=plan.reference_event, limit=limit,
             ).data()
             results.extend(rows)

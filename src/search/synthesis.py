@@ -128,7 +128,8 @@ def _parse_answer_block(raw: str, evidence: list[dict]) -> dict:
 
 def _faithful(answer: str, evidence: list[dict]) -> bool:
     """Gate: every [n] citation must be in range; answer must contain at least
-    one citation; and content words must overlap evidence."""
+    one citation; and content words must overlap evidence (0.2 catches short
+    answers citing dense passages)."""
     cites = re.findall(r"\[(\d+)\]", answer)
     if not cites:
         return False
@@ -139,4 +140,4 @@ def _faithful(answer: str, evidence: list[dict]) -> bool:
     if not ans_words:
         return False
     overlap = len(ans_words & ev_words) / len(ans_words)
-    return overlap >= 0.3
+    return overlap >= 0.2
