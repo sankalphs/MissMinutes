@@ -64,8 +64,13 @@ class GMIClient:
         messages: list[dict[str, str]],
         temperature: float = 0.1,
         max_tokens: int = 4096,
+        json_repair_attempt: bool = True,
     ) -> Any:
-        """Chat expecting a JSON object response; strips code fences."""
+        """Chat expecting a JSON object response; strips code fences.
+
+        On parse failure, retries once asking the model to re-emit valid
+        compact JSON (fixes truncation/quote glitches).
+        """
         content = self.chat(messages, temperature=temperature, max_tokens=max_tokens)
         text = content.strip()
         if text.startswith("```"):
@@ -73,5 +78,28 @@ class GMIClient:
             text = text.rsplit("```", 1)[0]
         try:
             return json.loads(text)
-        except json.JSONDecodeError as e:
-            raise GMIError(f"Invalid JSON from model: {e}\n{content[:500]}") from e
+        except json.JSONDecodeError:
+            if not json_repair_attempt:
+                raise GMIError(f"Invalid JSON from model: {content[:500]}")
+            repaired = self.chat(
+                [
+                    {
+                        "role": "system",
+                        "content": (
+                            "You fix malformed JSON. Output ONLY the corrected, "
+                            "valid compact JSON object. No prose, no code fences."
+                        ),
+                    },
+                    {"role": "user", "content": text},
+                ],
+                temperature=0.0,
+                max_tokens=max_tokens,
+            )
+            rtext = repaired.strip()
+            if rtext.startswith("```"):
+                rtext = rtext.split("\n", 1)[1] if "\n" in rtext else rtext
+                rtext = rtext.rsplit("```", 1)[0]
+            try:
+                return json.loads(rtext)
+            except json.JSONDecodeError as e:
+                raise GMIError(f"JSON repair failed: {e}\n{content[:500]}") from e
