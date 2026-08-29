@@ -16,10 +16,26 @@ from src.config import settings  # noqa: E402
 SIGNAL = settings.PROCESSED_DIR / "wyzie_back.txt"
 
 
+def check_status() -> bool:
+    """Poll /api/status (free, not budget-metered). True when any node is up."""
+    try:
+        r = httpx.get("https://sub.wyzie.io/api/status", timeout=15)
+        if r.status_code != 200:
+            return False
+        nodes = r.json()
+        return any(n.get("status") == "operational" for n in nodes.values())
+    except Exception:
+        return False
+
+
 def main() -> None:
     attempts = 0
     while True:
-        try:
+        attempts += 1
+        up = check_status()
+        print(f"attempt {attempts}: {'UP' if up else 'degraded'}", flush=True)
+        if up:
+            # confirm with a real (budgeted) search
             r = httpx.get(
                 "https://sub.wyzie.io/search",
                 params={
@@ -30,18 +46,12 @@ def main() -> None:
                 },
                 timeout=30,
             )
-            attempts += 1
-            print(f"attempt {attempts}: {r.status_code}", flush=True)
+            print(f"confirm search: {r.status_code}", flush=True)
             if r.status_code == 200:
                 SIGNAL.parent.mkdir(parents=True, exist_ok=True)
                 SIGNAL.write_text("wyzie is back", encoding="utf-8")
                 print("WYZIE IS BACK — signal file written")
                 return
-            if r.status_code == 401 or r.status_code == 403:
-                print("key rejected — stopping watch")
-                return
-        except httpx.HTTPError as e:
-            print(f"network error: {e}", flush=True)
         time.sleep(120)
 
 
