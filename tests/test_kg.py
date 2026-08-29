@@ -40,9 +40,24 @@ def test_resolver_alias_and_case_match(tmp_path: Path) -> None:
     assert any(e["name"] == "Loki" for e in ents)
     r.record_conflict("event:battle_of_new_york", "date=2013", "The Avengers", 0.5)
     r.record_conflict("event:battle_of_new_york", "date=2012", "The Avengers", 0.95)
-    con = r._conn()
+    import sqlite3
+
+    con = sqlite3.connect(tmp_path / "kg.db")
     assert con.execute("SELECT COUNT(*) FROM conflicts").fetchone()[0] == 2
     con.close()
+
+
+def test_resolver_type_disambiguation(tmp_path: Path) -> None:
+    r = EntityResolver(db_path=tmp_path / "kg.db")
+    r.register("SHIELD", "Organization", ["S.H.I.E.L.D."])
+    r.register("Captain America's Shield", "Object", ["Shield"])
+    # alias 'S.H.I.E.L.D.' -> org; alias 'Shield' -> object; type decides
+    assert r.resolve("S.H.I.E.L.D.", "Organization") == "organization:shield"
+    assert r.resolve("Shield", "Object") == "object:captain_americas_shield"
+    # 'shield' with Organization type must NOT become the shield object
+    cid = r.register("SHIELD", "Organization", ["S.H.I.E.L.D."])
+    assert cid == "organization:shield"
+    assert r.resolve("Stark", "Character") != r.resolve("Stark Industries", "Organization")
 
 
 def test_valid_full_extraction_parses() -> None:

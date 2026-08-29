@@ -1,4 +1,4 @@
-/* scene iframe styles — the void itself, until Subphase 2 recomposes it */
+/* scene iframe styles — the void itself, the labels, the fade-in */
 html, body {
   margin: 0;
   padding: 0;
@@ -7,46 +7,56 @@ html, body {
   background: #060913;
 }
 
+/* deep-space vignette behind the transparent canvas */
 #scene-root {
   position: absolute;
   inset: 0;
   cursor: grab;
+  background:
+    radial-gradient(ellipse 130% 90% at 68% 38%, #101735 0%, #0a0f22 34%, #060913 72%, #03040a 100%);
 }
 #scene-root:active { cursor: grabbing; }
 
-#scene-root canvas { display: block; }
+#scene-root canvas {
+  display: block;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
 
-/* --- projected branch labels (recomposed in Subphase 2) ------------- */
+#scene-root.live canvas { opacity: 1; }
+
+/* --- labels: small, unboxed, depth-faded ---------------------------- */
 .scene-label {
   position: absolute;
   top: 0; left: 0;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  color: rgba(139, 147, 181, 0.75);
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  color: rgba(139, 147, 181, 0.85);
   text-transform: uppercase;
   white-space: nowrap;
   background: none;
   border: none;
-  padding: 0 0 0 10px;
+  padding: 0;
   pointer-events: none;
   will-change: transform, opacity;
-  transition: opacity 0.25s ease;
+  transition: opacity 0.3s ease;
 }
 
+/* a thin leader dot — quieter than a box */
 .scene-label::before {
   content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 4px; height: 4px;
+  display: inline-block;
+  width: 3px; height: 3px;
   border-radius: 50%;
   background: currentColor;
+  margin-right: 7px;
+  vertical-align: 2px;
   opacity: 0.7;
 }
 
-.scene-label.pruned { color: rgba(201, 85, 58, 0.8); }
+.scene-label.spine { color: rgba(217, 164, 91, 0.9); }
+.scene-label.pruned { color: rgba(201, 85, 58, 0.75); }
 
 /* --- fallback -------------------------------------------------------- */
 #fallback {
@@ -64,5 +74,5 @@ html, body {
 #fallback[hidden] { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .scene-label.pruned { animation: none; }
+  #scene-root canvas { transition: none; opacity: 1; }
 }

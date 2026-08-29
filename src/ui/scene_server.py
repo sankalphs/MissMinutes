@@ -20,7 +20,8 @@ def _file_response(name: str) -> FileResponse | PlainTextResponse:
     if not path.is_file():
         return PlainTextResponse("not found", status_code=404)
     media, _ = mimetypes.guess_type(path.name)
-    return FileResponse(path, media_type=media or "text/plain", headers={"Cache-Control": "public, max-age=3600"})
+    # no-cache: the scene is art-directed live; staleness is worse than a revalidate
+    return FileResponse(path, media_type=media or "text/plain", headers={"Cache-Control": "no-cache"})
 
 
 async def _scene(request):
