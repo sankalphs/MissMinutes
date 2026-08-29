@@ -1,0 +1,318 @@
+/* ===================================================================
+   MissMinutes — TVA archive terminal
+   Cathode-amber on temporal void. Panels are filing-cabinet plates;
+   the hero is a Three.js temporal void served at /scene.
+   Fonts are injected via <head> in app.py (constructed stylesheets
+   cannot carry @import).
+   =================================================================== */
+
+:root {
+  --void: #0B0A14;
+  --void-2: #100E1A;
+  --panel: #14121F;
+  --panel-2: #1A1626;
+  --line: #262038;
+  --line-strong: #2A2440;
+  --amber: #FFB74A;
+  --amber-hot: #FFD9A0;
+  --amber-dim: #B87A2A;
+  --chronoline: #8A86B8;
+  --chrono-dim: #5B5680;
+  --paper: #EDE6D6;
+  --danger: #E4572E;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --display: 'Bungee', var(--sans);
+}
+
+/* --- shell --------------------------------------------------------- */
+.gradio-container {
+  background: var(--void) !important;
+  font-family: var(--sans) !important;
+  max-width: 1180px !important;
+  margin: 0 auto;
+  padding: 0 !important;
+}
+
+.main, .gap, .block, .form {
+  background: transparent !important;
+}
+
+/* kill gradio default card chrome everywhere */
+.block.contained_block,
+.wrap.default,
+.panel,
+.gap fieldset,
+.block {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* --- chronofile header bar ----------------------------------------- */
+#chronofile {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #1A1626 0%, var(--panel) 100%);
+  border-bottom: 1px solid var(--amber-dim);
+  padding: 10px 18px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--amber);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+#chronofile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent 0 2px, rgba(255, 183, 74, 0.028) 2px 3px
+  );
+  pointer-events: none;
+}
+
+#chronofile .cf-right {
+  color: var(--chrono-dim);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+#chronofile .cf-right b {
+  color: var(--chronoline);
+  font-weight: 500;
+}
+
+/* --- hero: the 3D temporal void ------------------------------------ */
+#hero-frame {
+  position: relative;
+  border: 1px solid var(--line-strong);
+  border-top: none;
+  background: var(--void-2);
+  overflow: hidden;
+  margin: 0 0 0 0;
+}
+
+#hero-frame iframe {
+  display: block;
+  width: 100%;
+  height: 560px;
+  border: none;
+}
+
+.hero-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  text-align: center;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.hero-title h1 {
+  font-family: var(--display);
+  font-size: clamp(34px, 5.4vw, 54px);
+  color: var(--amber);
+  letter-spacing: 0.10em;
+  margin: 0;
+  text-shadow:
+    0 0 22px rgba(255, 183, 74, 0.35),
+    0 2px 0 rgba(0, 0, 0, 0.6);
+}
+
+.hero-title p {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--chronoline);
+  margin: 4px 0 26px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+/* --- query dock: fused to the hero, like a console ------------------ */
+#query-dock {
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-top: 1px solid var(--amber-dim);
+  padding: 16px 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#query-dock .dock-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--amber-dim);
+}
+
+.query-box textarea {
+  background: var(--void-2) !important;
+  color: var(--paper) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 3px !important;
+  font-size: 15px !important;
+  font-family: var(--sans) !important;
+  padding: 12px 14px !important;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.45);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.query-box textarea:focus {
+  border-color: var(--amber-dim) !important;
+  box-shadow:
+    inset 0 2px 8px rgba(0, 0, 0, 0.45),
+    0 0 0 2px rgba(255, 183, 74, 0.12);
+}
+
+.query-box textarea::placeholder { color: var(--chrono-dim) !important; }
+
+/* timeline filter dropdown */
+#timeline-filter {
+  background: var(--void-2) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 3px !important;
+}
+
+#timeline-filter .wrap,
+#timeline-filter label,
+#timeline-filter span {
+  color: var(--chronoline) !important;
+  font-family: var(--mono) !important;
+  font-size: 12px !important;
+}
+
+/* primary button — the one amber slab on the page */
+button.primary {
+  background: linear-gradient(180deg, var(--amber) 0%, #E89C2F 100%) !important;
+  color: #241505 !important;
+  font-family: var(--mono) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  font-size: 13px !important;
+  border: 1px solid #8A5A18 !important;
+  border-radius: 3px !important;
+  padding: 10px 22px !important;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 4px 14px rgba(255, 183, 74, 0.22) !important;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+button.primary:hover { filter: brightness(1.08); }
+button.primary:active { transform: translateY(1px); }
+
+/* --- results: answer dossier | evidence case-file ------------------- */
+#results-row { margin-top: 18px; }
+
+#answer-col .block,
+#evidence-col .block {
+  background: var(--panel) !important;
+}
+
+#answer {
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--amber);
+  border-radius: 4px;
+  padding: 20px 22px;
+  color: var(--paper);
+  min-height: 180px;
+  font-size: 14.5px;
+  line-height: 1.62;
+}
+
+#answer .src {
+  display: block;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  font-family: var(--mono);
+  color: var(--amber-dim);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+#answer .warn {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--danger);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+#evidence {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 14px 16px;
+}
+
+#evidence .ev-heading {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--amber-dim);
+  margin-bottom: 10px;
+}
+
+#evidence .chunk {
+  background: var(--void-2);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--chronoline);
+  border-radius: 3px;
+  padding: 10px 12px;
+  margin: 8px 0;
+  color: var(--chronoline);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+#evidence .chunk b {
+  color: var(--paper);
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+/* --- footer --------------------------------------------------------- */
+.footer {
+  margin-top: 26px;
+  padding: 12px 0 22px;
+  border-top: 1px solid var(--line);
+  color: var(--chrono-dim);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.footer b { color: var(--chronoline); font-weight: 500; }
+
+/* --- a11y ----------------------------------------------------------- */
+:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* --- responsive ------------------------------------------------------ */
+@media (max-width: 768px) {
+  #hero-frame iframe { height: 420px; }
+  #query-dock { padding: 12px; }
+  #chronofile .cf-right { display: none; }
+}
