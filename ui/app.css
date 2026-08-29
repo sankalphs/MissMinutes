@@ -1,318 +1,688 @@
 /* ===================================================================
-   MissMinutes — TVA archive terminal
-   Cathode-amber on temporal void. Panels are filing-cabinet plates;
-   the hero is a Three.js temporal void served at /scene.
-   Fonts are injected via <head> in app.py (constructed stylesheets
-   cannot carry @import).
+   MissMinutes — a cinematic multiverse archive.
+   Deep-blue void, warm paper text, one white-gold timeline filament.
+   Gold is rare: focus, active state, the sacred timeline. Nothing else.
+
+   Layout: full-bleed cinematic hero, then a centered readable column
+   (search + editorial content). No section rectangles — hierarchy comes
+   from spacing, translucent surfaces, and hairlines.
    =================================================================== */
 
 :root {
-  --void: #0B0A14;
-  --void-2: #100E1A;
-  --panel: #14121F;
-  --panel-2: #1A1626;
-  --line: #262038;
-  --line-strong: #2A2440;
-  --amber: #FFB74A;
-  --amber-hot: #FFD9A0;
-  --amber-dim: #B87A2A;
-  --chronoline: #8A86B8;
-  --chrono-dim: #5B5680;
-  --paper: #EDE6D6;
-  --danger: #E4572E;
+  --void: #060913;
+  --void-2: #0A0F22;
+  --surface: rgba(13, 17, 34, 0.55);
+  --surface-2: rgba(20, 26, 48, 0.45);
+  --line: rgba(139, 147, 181, 0.14);
+  --hairline: rgba(242, 238, 227, 0.08);
+
+  --paper: #F2EEE3;           /* primary text — warm off-white */
+  --paper-dim: #B9BCC8;
+  --chrono: #8B93B5;          /* secondary text — cool gray-blue */
+  --chrono-dim: #565E82;
+
+  --gold: #D9A45B;           /* rare. focus, active, the sacred timeline */
+  --gold-hot: #EDC98F;
+  --gold-dim: #8A6B34;
+  --branch: #7C8AC4;          /* branch timelines / soft blue */
+  --danger: #C9553A;
+
+  --serif: 'Instrument Serif', Georgia, serif;
+  --sans: 'Manrope', system-ui, -apple-system, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
-  --sans: 'IBM Plex Sans', system-ui, sans-serif;
-  --display: 'Bungee', var(--sans);
+
+  --content-w: 720px;
 }
 
-/* --- shell --------------------------------------------------------- */
-.gradio-container {
+/* ------------------------------------------------------------------ */
+/* Gradio neutralization — the page must not reveal its framework.    */
+/* ------------------------------------------------------------------ */
+
+html, body {
   background: var(--void) !important;
+}
+
+.gradio-container {
+  background: transparent !important;
   font-family: var(--sans) !important;
-  max-width: 1180px !important;
-  margin: 0 auto;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: var(--paper);
+}
+
+/* kill every default card, panel, inset, and gap gradio adds */
+.main,
+.gap,
+.block,
+.form,
+.panel,
+.contain,
+footer,
+.gradio-container > .footer,
+div[class*="footer"] {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* the wrapper chain: no width caps, no insets, no default gaps — we own the rhythm */
+.main.fillable.app,
+.main.fillable.app > .wrap {
+  max-width: none !important;
+  width: 100% !important;
   padding: 0 !important;
 }
 
-.main, .gap, .block, .form {
+.column { gap: 0 !important; }
+
+.html-container { padding: 0 !important; }
+
+.block.hide-container { padding: 0 !important; }
+
+/* hide gradio's built-in footer ("Built with Gradio", API, settings) */
+.gradio-container .footer,
+gradio-footer { display: none !important; }
+
+/* the hidden pipeline-status textbox must not leave an empty block */
+.block:has(> textarea[aria-label="status"]:only-child) { display: none !important; }
+
+/* gradio wraps gr.HTML in .prose with 24px insets — all static prose
+   blocks become the centered readable column; #herowrap overrides below */
+:where(.gradio-container) .prose {
+  padding: 0 24px !important;
+  margin: 0 auto !important;
   background: transparent !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  max-width: var(--content-w);
 }
 
-/* kill gradio default card chrome everywhere */
-.block.contained_block,
-.wrap.default,
-.panel,
-.gap fieldset,
-.block {
-  border: none !important;
-  box-shadow: none !important;
-  background: transparent !important;
-}
+/* ------------------------------------------------------------------ */
+/* 1 — topbar: a quiet floating status line on the void               */
+/* ------------------------------------------------------------------ */
 
-/* --- chronofile header bar ----------------------------------------- */
-#chronofile {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(180deg, #1A1626 0%, var(--panel) 100%);
-  border-bottom: 1px solid var(--amber-dim);
-  padding: 10px 18px;
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--amber);
+/* the hero's own prose wrapper goes full-bleed; the topbar's wrapper
+   collapses (the bar itself is absolutely positioned) */
+.prose:has(> #hero) { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+.prose:has(> #topbar) { max-width: none !important; padding: 0 !important; margin: 0 !important; height: 0 !important; overflow: visible !important; }
+
+#topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  padding: 22px 36px;
+  pointer-events: none;   /* chrome text only; nothing to click */
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--chrono);
 }
 
-#chronofile::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg, transparent 0 2px, rgba(255, 183, 74, 0.028) 2px 3px
-  );
-  pointer-events: none;
+#topbar .brand {
+  font-weight: 600;
+  color: var(--paper);
+  letter-spacing: 0.18em;
+  font-size: 11.5px;
 }
 
-#chronofile .cf-right {
+#topbar .status {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
   color: var(--chrono-dim);
-  font-size: 10px;
-  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
-#chronofile .cf-right b {
-  color: var(--chronoline);
-  font-weight: 500;
+#topbar .status .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 6px rgba(217, 164, 91, 0.5);
 }
 
-/* --- hero: the 3D temporal void ------------------------------------ */
-#hero-frame {
+/* ------------------------------------------------------------------ */
+/* 2 — hero: full-bleed cinematic frame                                */
+/*     its prose wrapper is escaped above via :has(> #hero)            */
+/* ------------------------------------------------------------------ */
+
+#hero {
   position: relative;
-  border: 1px solid var(--line-strong);
-  border-top: none;
-  background: var(--void-2);
+  width: 100%;
+  height: 66vh;
+  min-height: 460px;
+  background: var(--void);
   overflow: hidden;
-  margin: 0 0 0 0;
 }
 
-#hero-frame iframe {
+#hero iframe {
   display: block;
   width: 100%;
-  height: 560px;
+  height: 100%;
   border: none;
 }
 
-.hero-title {
+/* the seam: hero dissolves into the page void */
+#hero::after {
+  content: '';
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -6px;
-  text-align: center;
+  bottom: 0;
+  height: 180px;
+  background: linear-gradient(180deg, transparent, var(--void) 92%);
   pointer-events: none;
+}
+
+/* brand block — restrained, lower-left, inside the hero */
+#hero .brandblock {
+  position: absolute;
+  left: clamp(24px, 5vw, 72px);
+  bottom: clamp(28px, 6vh, 64px);
+  z-index: 5;
+  pointer-events: none;
+}
+
+#hero .brandblock h1 {
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: clamp(40px, 6vw, 76px);
+  line-height: 0.98;
+  letter-spacing: 0.16em;
+  color: var(--paper);
+  margin: 0 0 14px;
+  text-shadow: 0 2px 24px rgba(6, 9, 19, 0.8);
+}
+
+#hero .brandblock .tagline {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(17px, 2vw, 22px);
+  color: var(--gold);
+  opacity: 0.92;
+  margin: 0 0 10px;
+  letter-spacing: 0.02em;
+}
+
+#hero .brandblock .lede {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--chrono);
+  max-width: 34ch;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* 3 — search experience: centered, generous, part of the flow         */
+/* ------------------------------------------------------------------ */
+
+#searchzone {
+  max-width: var(--content-w);
+  margin: -72px auto 0;      /* pull up over the hero seam */
+  position: relative;
+  z-index: 6;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: center;
+}
+
+#searchzone > .block:not(#searchrow),
+#searchzone > .form,
+#searchzone > .block { background: transparent !important; }
+
+#searchzone .ask {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 22px;
+  color: var(--chrono);
+  margin: 0 auto 18px;
+  text-align: center;
+}
+
+#searchzone .ask em {
+  color: var(--paper);
+  font-style: italic;
+}
+
+/* the row is a stage: the textarea-block IS the pill, the button floats in it */
+#searchrow {
+  position: relative;
+  display: block !important;
+  width: 100%;
+  gap: 0 !important;
+}
+
+#searchrow .form,
+#searchrow .block,
+#searchrow .wrap { background: transparent !important; padding: 0 !important; }
+
+/* the search surface — one translucent pill, no heavy borders */
+#searchzone .query-box textarea {
+  width: 100%;
+  box-sizing: border-box;
+  height: 62px;
+  background: var(--surface) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: var(--paper) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 999px !important;
+  font-size: 16px !important;
+  font-family: var(--sans) !important;
+  font-weight: 400;
+  padding: 0 132px 0 52px !important;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(242, 238, 227, 0.05) !important;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+  resize: none !important;
+  overflow: hidden;
+  line-height: 60px;
+}
+
+#searchzone .query-box textarea:focus {
+  border-color: rgba(217, 164, 91, 0.45) !important;
+  background: rgba(13, 17, 34, 0.72) !important;
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.5),
+    0 0 0 4px rgba(217, 164, 91, 0.10),
+    inset 0 1px 0 rgba(242, 238, 227, 0.06) !important;
+  outline: none !important;
+}
+
+#searchzone .query-box textarea::placeholder {
+  color: var(--chrono-dim) !important;
+  font-weight: 300;
+}
+
+/* the search glyph, painted onto the pill's left */
+#searchzone .query-box .wrap::before,
+#searchzone .query-box .textarea-wrap::before {
+  content: '';
+  position: absolute;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-52%);
+  width: 17px;
+  height: 17px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: 0.55;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23D9A45B' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath stroke-linecap='round' d='m20 20-4.2-4.2'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* the query block needs relative positioning so ::before anchors to it */
+#searchzone .query-box { position: relative; }
+
+/* the quiet gold action, inside the pill's right */
+#searchbtn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 3;
 }
 
-.hero-title h1 {
-  font-family: var(--display);
-  font-size: clamp(34px, 5.4vw, 54px);
-  color: var(--amber);
-  letter-spacing: 0.10em;
-  margin: 0;
-  text-shadow:
-    0 0 22px rgba(255, 183, 74, 0.35),
-    0 2px 0 rgba(0, 0, 0, 0.6);
-}
-
-.hero-title p {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--chronoline);
-  margin: 4px 0 26px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-}
-
-/* --- query dock: fused to the hero, like a console ------------------ */
-#query-dock {
-  background: var(--panel);
-  border: 1px solid var(--line-strong);
-  border-top: 1px solid var(--amber-dim);
-  padding: 16px 18px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-#query-dock .dock-label {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--amber-dim);
-}
-
-.query-box textarea {
-  background: var(--void-2) !important;
-  color: var(--paper) !important;
-  border: 1px solid var(--line) !important;
-  border-radius: 3px !important;
-  font-size: 15px !important;
+#searchzone button.primary,
+#searchbtn {
+  background: transparent !important;
+  border: none !important;
+  color: var(--gold) !important;
   font-family: var(--sans) !important;
-  padding: 12px 14px !important;
-  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.45);
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  font-weight: 600;
+  font-size: 13.5px;
+  letter-spacing: 0.06em;
+  padding: 10px 22px !important;
+  border-radius: 999px !important;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  white-space: nowrap;
+  height: auto !important;
+  min-height: 0 !important;
+  box-shadow: none !important;
 }
 
-.query-box textarea:focus {
-  border-color: var(--amber-dim) !important;
-  box-shadow:
-    inset 0 2px 8px rgba(0, 0, 0, 0.45),
-    0 0 0 2px rgba(255, 183, 74, 0.12);
+#searchzone button.primary:hover,
+#searchbtn:hover {
+  background: rgba(217, 164, 91, 0.12) !important;
+  color: var(--gold-hot) !important;
 }
 
-.query-box textarea::placeholder { color: var(--chrono-dim) !important; }
+#searchzone button.primary:active,
+#searchbtn:active {
+  background: rgba(217, 164, 91, 0.18) !important;
+  transform: translateY(-50%);
+}
 
-/* timeline filter dropdown */
+#searchbtn:active { transform: translateY(-50%); }
+#searchzone button.primary:active { transform: none; }
+
+/* timeline filter — the real dropdown, restyled to quiet mono text */
+#searchzone #timeline-filter { margin-top: 14px; }
+
 #timeline-filter {
-  background: var(--void-2) !important;
-  border: 1px solid var(--line) !important;
-  border-radius: 3px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
 }
 
 #timeline-filter .wrap,
 #timeline-filter label,
 #timeline-filter span {
-  color: var(--chronoline) !important;
+  color: var(--chrono-dim) !important;
   font-family: var(--mono) !important;
-  font-size: 12px !important;
+  font-size: 11px !important;
+  letter-spacing: 0.1em;
+  background: transparent !important;
 }
 
-/* primary button — the one amber slab on the page */
-button.primary {
-  background: linear-gradient(180deg, var(--amber) 0%, #E89C2F 100%) !important;
-  color: #241505 !important;
-  font-family: var(--mono) !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.14em !important;
-  text-transform: uppercase !important;
-  font-size: 13px !important;
-  border: 1px solid #8A5A18 !important;
-  border-radius: 3px !important;
-  padding: 10px 22px !important;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 4px 14px rgba(255, 183, 74, 0.22) !important;
-  transition: filter 0.15s ease, transform 0.1s ease;
+#timeline-filter .container {
+  background: transparent !important;
+  border: none !important;
 }
 
-button.primary:hover { filter: brightness(1.08); }
-button.primary:active { transform: translateY(1px); }
+/* ------------------------------------------------------------------ */
+/* 4 — examples: editorial suggestions, not pill chips                */
+/* ------------------------------------------------------------------ */
 
-/* --- results: answer dossier | evidence case-file ------------------- */
-#results-row { margin-top: 18px; }
-
-#answer-col .block,
-#evidence-col .block {
-  background: var(--panel) !important;
+#examples {
+  max-width: var(--content-w);
+  margin: 52px auto 0;
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
+/* gradio wraps the secondary buttons in blocks/rows — flatten them */
+#examples .block,
+#examples .form,
+#examples .row,
+#examples .wrap {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: block;
+}
+
+#examples button {
+  display: block;
+  margin: 6px auto 0 !important;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 2px 0 !important;
+  color: var(--chrono) !important;
+  font-family: var(--sans) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.005em;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+#examples button::after {
+  content: '';
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: -1px;
+  height: 1px;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+#examples button:hover { color: var(--paper) !important; }
+
+#examples button:hover::after {
+  background: rgba(217, 164, 91, 0.5);
+}
+
+#examples .ex-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--chrono-dim);
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+#examples .ex-label i {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--chrono);
+  margin-right: 2px;
+}
+
+/* the centered readable column — every static prose block adopts it;
+   #topbar escapes (absolute) and #hero escapes (negative margins) */
+.gradio-container .prose {
+  max-width: var(--content-w);
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 24px;
+}
+
+/* ------------------------------------------------------------------ */
+/* 5 — results: centered editorial column                              */
+/* ------------------------------------------------------------------ */
+
+#read { margin-top: 64px; }
+
+#read .divider {
+  width: 1px;
+  height: 40px;
+  background: var(--hairline);
+  margin: 0 auto;
+}
+
+#read .section-eyebrow {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  margin: 0 0 20px;
+}
+
+/* --- answer: a reading column --------------------------------------- */
 #answer {
-  background: var(--panel);
-  border: 1px solid var(--line-strong);
-  border-left: 3px solid var(--amber);
-  border-radius: 4px;
-  padding: 20px 22px;
+  font-size: 17px;
+  line-height: 1.75;
+  font-weight: 400;
   color: var(--paper);
-  min-height: 180px;
-  font-size: 14.5px;
-  line-height: 1.62;
+  letter-spacing: 0.003em;
+}
+
+#answer p { margin: 0 0 1em; }
+
+#answer .warn {
+  display: block;
+  margin: 18px 0 4px;
+  color: var(--danger);
+  font-size: 13.5px;
+  font-family: var(--sans);
 }
 
 #answer .src {
   display: block;
-  margin-top: 14px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--line);
+  margin-top: 26px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hairline);
   font-family: var(--mono);
-  color: var(--amber-dim);
-  font-size: 11px;
-  letter-spacing: 0.06em;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--chrono-dim);
+  line-height: 1.9;
+  text-transform: uppercase;
 }
 
-#answer .warn {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--danger);
-  font-family: var(--mono);
-  font-size: 12px;
-}
-
-#evidence {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  padding: 14px 16px;
-}
+/* --- evidence: archival numbered rows ------------------------------- */
+#evidence { margin-top: 56px; }
 
 #evidence .ev-heading {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--amber-dim);
-  margin-bottom: 10px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 20px;
+  color: var(--paper);
+  margin: 0 0 6px;
 }
 
+#evidence .ev-sub {
+  font-size: 12.5px;
+  color: var(--chrono-dim);
+  margin: 0 0 8px;
+}
+
+/* numbered row — hairline separated, no rectangles */
 #evidence .chunk {
-  background: var(--void-2);
-  border: 1px solid var(--line);
-  border-left: 2px solid var(--chronoline);
-  border-radius: 3px;
-  padding: 10px 12px;
-  margin: 8px 0;
-  color: var(--chronoline);
-  font-size: 12px;
-  line-height: 1.5;
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 0 18px;
+  padding: 18px 4px;
+  border-top: 1px solid var(--hairline);
+  color: inherit;
+  transition: background 0.25s ease;
+}
+
+#evidence .chunk:last-child { border-bottom: 1px solid var(--hairline); }
+
+#evidence .chunk:hover { background: rgba(20, 26, 48, 0.30); }
+
+#evidence .chunk .num {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--gold-dim);
+  padding-top: 3px;
 }
 
 #evidence .chunk b {
+  display: block;
   color: var(--paper);
-  font-family: var(--mono);
-  font-weight: 500;
-  font-size: 11px;
-  letter-spacing: 0.06em;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 14.5px;
+  letter-spacing: 0.01em;
+  margin-bottom: 3px;
 }
 
-/* --- footer --------------------------------------------------------- */
-.footer {
-  margin-top: 26px;
-  padding: 12px 0 22px;
-  border-top: 1px solid var(--line);
-  color: var(--chrono-dim);
+#evidence .chunk .meta {
+  display: block;
   font-family: var(--mono);
+  font-variant: normal;
   font-size: 10px;
   letter-spacing: 0.12em;
+  color: var(--chrono-dim);
   text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+#evidence .chunk .quote {
+  display: block;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--chrono);
+}
+
+/* ------------------------------------------------------------------ */
+/* 6 — colophon                                                        */
+/* ------------------------------------------------------------------ */
+
+#colophon {
+  max-width: var(--content-w);
+  margin: 96px auto 0;
+  padding: 0 24px 56px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chrono-dim);
   text-align: center;
 }
 
-.footer b { color: var(--chronoline); font-weight: 500; }
+#colophon b { color: var(--chrono); font-weight: 500; }
 
-/* --- a11y ----------------------------------------------------------- */
+/* ------------------------------------------------------------------ */
+/* dropdown restyle (still gradio inside)                              */
+/* ------------------------------------------------------------------ */
+
+#timeline-filter {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+#timeline-filter .wrap,
+#timeline-filter label,
+#timeline-filter span {
+  color: var(--chrono-dim) !important;
+  font-family: var(--mono) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.1em;
+}
+
+/* ------------------------------------------------------------------ */
+/* quality floor                                                       */
+/* ------------------------------------------------------------------ */
+
 :focus-visible {
-  outline: 2px solid var(--amber);
+  outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; }
+::selection {
+  background: rgba(217, 164, 91, 0.25);
+  color: var(--paper);
 }
 
-/* --- responsive ------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* responsive                                                          */
+/* ------------------------------------------------------------------ */
+
 @media (max-width: 768px) {
-  #hero-frame iframe { height: 420px; }
-  #query-dock { padding: 12px; }
-  #chronofile .cf-right { display: none; }
+  #topbar { padding: 18px 22px; }
+  #topbar .status { display: none; }
+
+  #hero { height: 58vh; min-height: 420px; }
+
+  #hero .brandblock {
+    left: 24px;
+    right: 24px;
+    bottom: 96px;           /* clear of the search pill pulled over the seam */
+  }
+
+  #hero .brandblock h1 { font-size: clamp(34px, 11vw, 48px); }
+
+  #searchzone { margin-top: -46px; }
+
+  #searchzone .query-box textarea { padding: 16px 108px 16px 48px !important; font-size: 15px !important; }
+
+  #examples .ex-rows { flex-direction: column; align-items: center; gap: 12px; }
+
+  #read { margin-top: 48px; }
+
+  #evidence .chunk { grid-template-columns: 34px 1fr; gap: 0 14px; }
 }

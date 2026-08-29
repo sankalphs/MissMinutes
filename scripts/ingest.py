@@ -38,20 +38,22 @@ def doc_id_for(entry: dict, season: int | None, episode: int | None) -> str:
     return f"doc:{base}_s{season:02d}e{episode:02d}"
 
 
-def looks_like_wrong_content(doc_text: str, entry: dict) -> bool:
-    """Guard against wrong-show subtitle files: the title's distinctive words
-    (or the franchise marker 'marvel') should appear somewhere in the text."""
-    import re as _re
+SPAM_MARKERS = [
+    "mcephie", "moviesnipipay", "netnaija", "stagatv", "tagalog",
+    "full4movies", "mkvcage", "kisscartoon",
+]
 
+
+def looks_like_wrong_content(doc_text: str, entry: dict) -> bool:
+    """Guard against spam/watermark subtitle files only.
+
+    Title-word heuristics are unreliable: movie titles like 'Quantumania' or
+    'Wakanda Forever' are never spoken in dialogue. Release-name matching in
+    the provider is already strict (exact episode markers, year, title phrase),
+    so here we only block known spam watermarks.
+    """
     text = doc_text.lower()
-    words = [
-        w for w in _re.sub(r"[^a-z0-9 ]", " ", entry["title"].lower()).split()
-        if len(w) > 3 and w not in {"the", "and", "of"}
-    ]
-    if "marvel" in text or "stan lee" in text:
-        return False
-    # any distinctive title word appearing anywhere is a pass
-    return not any(w in text for w in words)
+    return any(m in text for m in SPAM_MARKERS)
 
 
 def ingest_target(

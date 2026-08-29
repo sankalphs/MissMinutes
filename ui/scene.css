@@ -1,10 +1,10 @@
-/* scene iframe styles — the void itself, plus HUD + projected labels */
+/* scene iframe styles — the void itself, until Subphase 2 recomposes it */
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
   overflow: hidden;
-  background: #0b0a14;
+  background: #060913;
 }
 
 #scene-root {
@@ -16,54 +16,19 @@ html, body {
 
 #scene-root canvas { display: block; }
 
-/* --- HUD ---------------------------------------------------------- */
-#scene-ui {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  font-family: "IBM Plex Mono", monospace;
-  color: #8a86b8;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 10px;
-  z-index: 2;
-}
-
-#hud-topleft { position: absolute; top: 14px; left: 18px; }
-#hud-bottomright { position: absolute; bottom: 14px; right: 18px; text-align: right; }
-
-.hud-kicker { color: #ffb74a; margin-bottom: 5px; }
-.hud-line { opacity: 0.75; }
-
-.hud-dot {
-  display: inline-block;
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: #ffb74a;
-  margin: 0 4px;
-  vertical-align: middle;
-  animation: hud-pulse 2.4s ease-in-out infinite;
-}
-
-@keyframes hud-pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
-}
-
-/* --- projected branch labels -------------------------------------- */
+/* --- projected branch labels (recomposed in Subphase 2) ------------- */
 .scene-label {
   position: absolute;
   top: 0; left: 0;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.14em;
-  color: #8a86b8;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: rgba(139, 147, 181, 0.75);
   text-transform: uppercase;
   white-space: nowrap;
-  padding: 3px 8px;
-  border: 1px solid rgba(138, 134, 184, 0.35);
-  background: rgba(11, 10, 20, 0.72);
-  border-radius: 2px;
+  background: none;
+  border: none;
+  padding: 0 0 0 10px;
   pointer-events: none;
   will-change: transform, opacity;
   transition: opacity 0.25s ease;
@@ -71,43 +36,33 @@ html, body {
 
 .scene-label::before {
   content: "";
-  display: inline-block;
-  width: 5px; height: 5px;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px; height: 4px;
   border-radius: 50%;
   background: currentColor;
-  margin-right: 6px;
-  vertical-align: middle;
-  opacity: 0.9;
+  opacity: 0.7;
 }
 
-.scene-label.pruned {
-  color: #e4572e;
-  border-color: rgba(228, 87, 46, 0.45);
-  animation: label-gutter 1.1s steps(2, jump-none) infinite;
-}
+.scene-label.pruned { color: rgba(201, 85, 58, 0.8); }
 
-@keyframes label-gutter {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
-}
-
-/* --- reduced motion ------------------------------------------------ */
-@media (prefers-reduced-motion: reduce) {
-  .hud-dot { animation: none; }
-  .scene-label.pruned { animation: none; }
-}
-
-/* --- fallback ------------------------------------------------------ */
+/* --- fallback -------------------------------------------------------- */
 #fallback {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #8a86b8;
-  font-family: "IBM Plex Mono", monospace;
+  color: #8B93B5;
+  font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
   text-align: center;
   padding: 24px;
 }
 #fallback[hidden] { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-label.pruned { animation: none; }
+}
