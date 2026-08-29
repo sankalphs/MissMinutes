@@ -31,29 +31,18 @@ HEAD = """
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script>
-/* branch click -> timeline selection, synced with the dropdown */
+/* branch click -> timeline scope, synced through the hidden scope textbox */
 window.addEventListener('message', function (e) {
   var d = e.data;
   if (!d || d.type !== 'timeline-select') return;
   var sel = document.getElementById('selection-note');
-  var map = { mcu: 'MCU', whatif: 'WhatIf', 'sony:rami': 'Sony: Rami',
-              'sony:webb': 'Sony: Webb', 'sony:ssu': 'Sony: SSU',
-              'fox:xmen': 'Fox: X-Men', defenders: 'Defenders' };
   var pretty = { mcu: 'MCU', whatif: 'What If...?', 'sony:rami': "Tobey Maguire's Spider-Man",
                  'sony:webb': 'Amazing Spider-Man', 'sony:ssu': 'Sony Universe — Venom · Morbius',
                  'fox:xmen': 'Fox X-Men', defenders: 'The Defenders' };
-  var box = document.querySelector('#timeline-filter input');
-  if (!d.timeline) {
-    if (sel) sel.textContent = '';
-    if (box) {
-      box.value = 'All timelines';
-      box.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-    return;
-  }
-  if (sel) sel.textContent = 'SCOPE · ' + (pretty[d.timeline] || d.timeline).toUpperCase();
+  if (sel) sel.textContent = d.timeline ? 'SCOPE · ' + (pretty[d.timeline] || d.timeline).toUpperCase() : '';
+  var box = document.querySelector('#scope-tb textarea');
   if (box) {
-    box.value = map[d.timeline] || d.timeline;
+    box.value = d.timeline || '';
     box.dispatchEvent(new Event('input', { bubbles: true }));
   }
 });
@@ -88,6 +77,12 @@ KEY_TO_TIMELINE = {
     "fox:xmen": "Fox: X-Men",
     "defenders": "Defenders",
 }
+
+
+def scope_from_scene(key: str):
+    """Scene click -> dropdown value (adapter at the Gradio boundary)."""
+    key = (key or "").strip()
+    return KEY_TO_TIMELINE.get(key, "All timelines")
 
 TOPBAR = """
 <div id="topbar">
@@ -235,6 +230,7 @@ def build_app() -> gr.Blocks:
                 show_label=False,
                 elem_id="timeline-filter",
             )
+            scope_tb = gr.Textbox(value="", elem_id="scope-tb")
             gr.HTML("<div id='selection-note'></div>")
 
         with gr.Column(elem_id="examples"):
@@ -256,6 +252,7 @@ def build_app() -> gr.Blocks:
 
         btn.click(search_and_answer, inputs=[q, tl], outputs=[out, ev, status])
         q.submit(search_and_answer, inputs=[q, tl], outputs=[out, ev, status])
+        scope_tb.change(scope_from_scene, inputs=[scope_tb], outputs=[tl])
         for i, (exb, ex_text) in enumerate(zip(ex_buttons, EXAMPLES)):
             exb.click(
                 run_example,

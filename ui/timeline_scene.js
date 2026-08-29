@@ -174,7 +174,7 @@ scene.add(spineFlow);
 /* lines (Rami / Webb / SSU) and the two Fox films pair as forks.     */
 /* ------------------------------------------------------------------ */
 const branchSpecs = [
-  { key: 'whatif',      label: 'WHAT IF...?',                  t: 0.30, len: 0.85, dir: [-0.35, 0.5, 0.95], color: BRANCH },
+  { key: 'whatif',      label: 'WHAT IF...?',                  t: 0.32, len: 0.85, dir: [ 0.28, 0.6, 0.75], color: BRANCH },
   { key: 'defenders',   label: 'THE DEFENDERS',                t: 0.38, len: 0.95, dir: [ 0.55, 0.7,  0.75], color: BRANCH },
   { key: 'sony:rami',   label: "TOBEY MAGUIRE'S SPIDER-MAN",   t: 0.50, len: 0.80, dir: [-0.42, 0.5,  0.9 ], color: BRANCH_DEEP },
   { key: 'sony:webb',   label: 'AMAZING SPIDER-MAN',          t: 0.56, len: 0.68, dir: [ 0.40, 0.45, 0.9 ], color: BRANCH_DEEP },
@@ -201,6 +201,10 @@ for (const spec of branchSpecs) {
   tube.userData.pick = spec.key;            // raycast target
   scene.add(tube);
 
+  /* screen-space pick LUT — sampled world points along the curve */
+  const pickLUT = [];
+  for (const p of curve.getSpacedPoints(24)) pickLUT.push(p.x, p.y, p.z);
+
   /* one small light at the fork — a temporal junction, nothing more */
   const light = new THREE.Sprite(new THREE.SpriteMaterial({
     map: GLOW, color: spec.pruned ? PRUNED : GOLD_SOFT,
@@ -212,13 +216,15 @@ for (const spec of branchSpecs) {
   scene.add(light);
 
   const tip = curve.getPointAt(0.92);
-  branches.push({ spec, tube, curve, tip, baseColor: new THREE.Color(spec.color), hover: 0, selected: false });
+  branches.push({ spec, tube, curve, tip, pickLUT, baseColor: new THREE.Color(spec.color), hover: 0, selected: false });
   forkLights.push({ light, spec });
 }
 
 /* the spine is pickable too — it is the MCU */
 spineCore.userData.pick = 'mcu';
 spineSleeve.userData.pick = 'mcu';
+const spinePickLUT = [];
+for (const p of spineCurve.getSpacedPoints(60)) spinePickLUT.push(p.x, p.y, p.z);
 
 /* ------------------------------------------------------------------ */
 /* Stars — a few, faint, twinkling.                                    */
@@ -300,12 +306,6 @@ const labels = labelSpecs.map(({ key, text, pruned }) => {
 });
 
 const pointer = { x: -1e4, y: -1e4 };
-container.addEventListener('pointermove', (e) => {
-  const r = renderer.domElement.getBoundingClientRect();
-  pointer.x = e.clientX - r.left;
-  pointer.y = e.clientY - r.top;
-});
-container.addEventListener('pointerleave', () => { pointer.x = -1e4; pointer.y = -1e4; });
 
 const LABEL_REVEAL_R = 130;   // px — proximity that reveals a label
 const v = new THREE.Vector3();
@@ -332,36 +332,56 @@ function updateLabels() {
   }
 }
 
-/* --- picking: hover a branch, click to select ------------------------ */
-const raycaster = new THREE.Raycaster();
-raycaster.params.Line = { threshold: 0.4 };
-const ndc = new THREE.Vector2();
+/* --- picking: screen-space proximity against each curve — forgiving   */
+/* for thin filaments. Hover reveals, click selects.                      */
+const PICK_R = 26;                       // px — how close the pointer must be
 let hoverKey = null;
 let selectedKey = null;
+const pickV = new THREE.Vector3();
 
-function pickAt(cx, cy) {
-  ndc.x = (cx / window.innerWidth) * 2 - 1;
-  ndc.y = -(cy / window.innerHeight) * 2 + 1;
-  raycaster.setFromCamera(ndc, camera);
-  const targets = [spineCore, spineSleeve, ...branches.map((b) => b.tube)];
-  const hits = raycaster.intersectObjects(targets, false);
-  return hits.length ? hits[0].object.userData.pick : null;
+function pickAt(px, py) {
+  let best = null, bestD = PICK_R;
+  // branches first (they're the intent), then the spine
+  for (const b of branches) {
+    for (let i = 0; i < b.pickLUT.length; i += 3) {
+      pickV.set(b.pickLUT[i], b.pickLUT[i + 1], b.pickLUT[i + 2]).project(camera);
+      if (pickV.z > 1) break;
+      const x = (pickV.x * 0.5 + 0.5) * window.innerWidth;
+      const y = (-pickV.y * 0.5 + 0.5) * window.innerHeight;
+      const d = Math.hypot(px - x, py - y);
+      if (d < bestD) { bestD = d; best = b.spec.key; }
+    }
+  }
+  if (best) return best;
+  for (let i = 0; i < spinePickLUT.length; i += 3) {
+    pickV.set(spinePickLUT[i], spinePickLUT[i + 1], spinePickLUT[i + 2]).project(camera);
+    if (pickV.z > 1) break;
+    const x = (pickV.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (-pickV.y * 0.5 + 0.5) * window.innerHeight;
+    if (Math.hypot(px - x, py - y) < PICK_R) return 'mcu';
+  }
+  return null;
 }
 
 container.addEventListener('pointermove', (e) => {
   const r = renderer.domElement.getBoundingClientRect();
-  const key = pickAt(e.clientX - r.left, e.clientY - r.top);
-  hoverKey = key;
-  const clickable = key && key !== 'pruned';
+  pointer.x = e.clientX - r.left;
+  pointer.y = e.clientY - r.top;
+  hoverKey = pickAt(pointer.x, pointer.y);
+  const clickable = hoverKey && hoverKey !== 'pruned';
   container.style.cursor = clickable ? 'pointer' : '';
+  if (clickable) controls.autoRotate = false;   // the user is engaging — hold the frame still
 });
-container.addEventListener('click', (e) => {
-  const r = renderer.domElement.getBoundingClientRect();
-  const key = pickAt(e.clientX - r.left, e.clientY - r.top);
-  if (!key || key === 'pruned') return;                 // pruned lines can't be searched
-  selectedKey = selectedKey === key ? null : key;       // second click clears
-  for (const l of labels) l.selected = l.key === selectedKey;
-  for (const l of labels) l.el.classList.toggle('selected', l.selected);
+container.addEventListener('pointerleave', () => {
+  pointer.x = -1e4; pointer.y = -1e4; hoverKey = null;
+});
+container.addEventListener('click', () => {
+  if (!hoverKey || hoverKey === 'pruned') return;       // pruned lines can't be searched
+  selectedKey = selectedKey === hoverKey ? null : hoverKey;   // second click clears
+  for (const l of labels) {
+    l.selected = l.key === selectedKey;
+    l.el.classList.toggle('selected', l.selected);
+  }
   parent.postMessage({ type: 'timeline-select', timeline: selectedKey }, '*');
 });
 
