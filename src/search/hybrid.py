@@ -43,8 +43,10 @@ def graph_search(graph: Graph, plan: QueryPlan, limit: int = 20) -> list[dict]:
             rows = s.run(
                 """MATCH (n) WHERE toLower(n.name) = toLower($name)
                    OPTIONAL MATCH (n)-[r]-(m)
+                   WITH n, m, r
+                   LIMIT 30
                    RETURN n.id AS id, n.name AS name, labels(n)[0] AS label,
-                          collect({id: m.id, name: m.name, rel: type(r)})[:6] AS neighbors
+                          [x IN collect({id: m.id, name: m.name, rel: type(r)}) WHERE x.id IS NOT NULL | x][..6] AS neighbors
                    LIMIT 5""",
                 name=name,
             ).data()
