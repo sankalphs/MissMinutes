@@ -25,7 +25,7 @@ REL_TYPES = {
     "MEMBER_OF",         # Character -> Organization
     "USES",              # Character -> Object
     "OCCURS_IN",         # Event -> Timeline
-    "DEPICTED_IN",       # Event -> Movie/Episode
+    "DEPICTED_IN",       # Event/Episode/Movie -> Timeline/Document
     "OCCURS_AT",         # Event -> Location
     "BEFORE",            # Event -> Event
     "AFTER",             # Event -> Event
@@ -33,6 +33,11 @@ REL_TYPES = {
     "CAUSES",            # Event -> Event
     "BRANCHES_FROM",     # Timeline -> Timeline
     "INVOLVES",          # Event -> Object
+    "KNOWS",             # Character -> Character
+    "ENEMY_OF",          # Character -> Character
+    "ALLIED_WITH",       # Character -> Character
+    "FAMILY_OF",         # Character -> Character
+    "ROMANTIC_WITH",     # Character -> Character
 }
 
 TIMELINE_SEED = [
@@ -65,10 +70,6 @@ class Graph:
         with self.session() as s:
             for label in NODE_LABELS:
                 s.run(f"CREATE CONSTRAINT IF NOT EXISTS FOR (n:{label}) REQUIRE n.id IS UNIQUE")
-            s.run(
-                "CREATE CONSTRAINT IF NOT EXISTS FOR ()-[r:PARTICIPATES_IN]-() "
-                "REQUIRE r.id IS RELATIONSHIP KEY"
-            )
             s.run("CREATE INDEX IF NOT EXISTS FOR (n:Event) ON (n.canonical_date)")
             s.run("CREATE INDEX IF NOT EXISTS FOR (n:Timeline) ON (n.name)")
         logger.info("schema initialized: %d labels, %d rel types", len(NODE_LABELS), len(REL_TYPES))

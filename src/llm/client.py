@@ -6,6 +6,7 @@ the graph must pass Pydantic validation first (spec:7,11,40).
 """
 import json
 import logging
+import time
 from typing import Any
 
 import httpx
@@ -25,16 +26,23 @@ class GMIClient:
         self.api_key = settings.GMI_API_KEY
         self.model = settings.GMI_MODEL
         self.timeout = timeout
+        # persistent client: connection reuse + transport-level retries
+        # (the local DNS resolver drops lookups under concurrency)
+        self._http = httpx.Client(
+            timeout=timeout,
+            transport=httpx.HTTPTransport(retries=3),
+        )
 
     def chat(
         self,
         messages: list[dict[str, str]],
         temperature: float = 0.1,
         max_tokens: int = 4096,
-        retries: int = 2,
+        retries: int = 4,
+        model: str | None = None,
     ) -> str:
         payload = {
-            "model": self.model,
+            "model": model or self.model,
             "messages": messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
@@ -43,20 +51,30 @@ class GMIClient:
         last_err: Exception | None = None
         for attempt in range(retries + 1):
             try:
-                resp = httpx.post(
+                resp = self._http.post(
                     f"{self.base_url}/chat/completions",
                     json=payload,
                     headers=headers,
-                    timeout=self.timeout,
                 )
-                if resp.status_code == 429 or resp.status_code >= 500:
+                if resp.status_code == 402:
+                    raise GMIError(f"HTTP 402 (model not on plan): {resp.text[:200]}")
+                if resp.status_code == 429:
+                    retry_after = resp.headers.get("Retry-After")
+                    wait = int(retry_after) if retry_after and retry_after.isdigit() else 2 * (attempt + 1)
+                    logger.info("429 rate limit — sleeping %ss (attempt %d)", wait, attempt)
+                    time.sleep(wait)
+                    last_err = GMIError(f"HTTP 429: {resp.text[:200]}")
+                    continue
+                if resp.status_code >= 500:
                     last_err = GMIError(f"HTTP {resp.status_code}: {resp.text[:300]}")
+                    time.sleep(1.5 * (attempt + 1))
                     continue
                 resp.raise_for_status()
                 data = resp.json()
                 return data["choices"][0]["message"]["content"]
             except httpx.HTTPError as e:
                 last_err = e
+                time.sleep(1.5 * (attempt + 1))
         raise GMIError(f"GMI request failed after {retries + 1} attempts: {last_err}")
 
     def chat_json(

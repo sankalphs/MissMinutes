@@ -23,11 +23,12 @@ class RelationType(str, Enum):
     uses = "USES"
     member_of = "MEMBER_OF"
     occurs_at = "OCCURS_AT"
-    involves = "INVOLVES"
     causes = "CAUSES"
-    before = "BEFORE"
-    after = "AFTER"
-    during = "DURING"
+    knows = "KNOWS"
+    enemy_of = "ENEMY_OF"
+    allied_with = "ALLIED_WITH"
+    family_of = "FAMILY_OF"
+    romantic_with = "ROMANTIC_WITH"
 
 
 class ExtractedEntity(BaseModel):
@@ -62,7 +63,7 @@ class ExtractedRelation(BaseModel):
 
     @field_validator("source", "target")
     @classmethod
-    def not_self(cls, v: str, info) -> str:
+    def strip_tokens(cls, v: str, info) -> str:
         return v.strip()
 
 
