@@ -1,9 +1,13 @@
 /*
  * The Sacred Timeline — a cinematic composition.
  *
- * One white-gold filament travels diagonally into depth; branches diverge
- * quietly upward; a few stars and fork lights, nothing else. Bloom is a
- * whisper, not a searchlight. Labels are small, unboxed, depth-faded.
+ * The spine is a luminous filament: it enters the frame low in the
+ * foreground on the right, arcs gently across the center, and recedes
+ * into fog on the upper left — continuing beyond what is visible.
+ * Branches are not distributed evenly: a few primary gestures rise
+ * clearly, secondary lines support them, distant whispers fade into
+ * the void. Bloom stays a whisper. Labels are hover-only — the
+ * composition must work before any text appears.
  *
  * Patterns adapted from three.js official examples (MIT):
  *   - shader point sprites (webgl_points_waves)
@@ -29,7 +33,7 @@ const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matc
 
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance', preserveDrawingBuffer: true });
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
 } catch (e) {
   document.getElementById('fallback').hidden = false;
   throw e;
@@ -39,27 +43,60 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.0;
-renderer.setClearColor(0x000000, 0);           // the page vignette shows through
+/* opaque canvas: a transparent WebGL iframe poisons Chromium compositing for
+   anything painted above it (the scope dropdown rendered as a black card).
+   The void vignette is drawn in-scene instead. */
+renderer.setClearColor(0x060913, 1);
 container.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(VOID, 0.02);      // far things sink into the void
+scene.fog = new THREE.FogExp2(VOID, 0.012);      // far things sink slowly into the void
 
-/* Camera: above and pitched down along the spine — it crosses the frame
-   as a full diagonal, near end low-left, far end high-right into depth. */
-const camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 0.1, 300);
-camera.position.set(-2, 7.5, 17);
+/* the deep-space vignette, painted inside the scene itself */
+const vignette = (() => {
+  const c = document.createElement('canvas');
+  c.width = 32; c.height = 32;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(22, 12, 1, 16, 16, 24);
+  grad.addColorStop(0, '#101735');
+  grad.addColorStop(0.35, '#0a0f22');
+  grad.addColorStop(0.72, '#060913');
+  grad.addColorStop(1, '#03040a');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 32, 32);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const quad = new THREE.Mesh(
+    new THREE.PlaneGeometry(2, 2),
+    new THREE.MeshBasicMaterial({ map: tex, depthTest: false, depthWrite: false, fog: false }),
+  );
+  quad.frustumCulled = false;
+  quad.renderOrder = -1;
+  quad.onBeforeRender = () => {
+    quad.position.setFromMatrixPosition(camera.matrixWorld);
+    quad.quaternion.copy(camera.quaternion);
+    quad.scale.set(1, 1, 1).multiplyScalar(camera.far * 0.9);
+  };
+  return quad;
+})();
+scene.add(vignette);
+
+/* Camera: composed so the spine crosses the frame as a diagonal —
+   near end enters low-right in the foreground (xmen/rami fork inside
+   the frame, tips exiting the right edge intentionally), far end
+   recedes upper-left into fog. No autorotate — the composition holds. */
+const camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 300);
+camera.position.set(-4.5, 4.4, 22.0);
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(2, 2.2, -4);
+controls.target.set(-8.5, 2.0, -10.5);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.enablePan = false;
 controls.minDistance = 9;
 controls.maxDistance = 32;
-controls.maxPolarAngle = Math.PI * 0.58;
-controls.autoRotate = !reducedMotion;
-controls.autoRotateSpeed = 0.08;               // near-imperceptible drift
+controls.maxPolarAngle = Math.PI * 0.62;
+controls.autoRotate = false;
 controls.update();
 
 /* ------------------------------------------------------------------ */
@@ -82,30 +119,74 @@ function glowTexture() {
 const GLOW = glowTexture();
 
 /* ------------------------------------------------------------------ */
-/* The Sacred Timeline — a horizontal filament receding into depth.    */
+/* The Sacred Timeline — a filament entering the foreground and        */
+/* receding into depth. Gentle organic wander, never a straight axis.  */
 /* ------------------------------------------------------------------ */
 const spineCurve = new THREE.CatmullRomCurve3([
-  new THREE.Vector3(-24, 4.0, 10),
-  new THREE.Vector3(-12, 2.2, 4),
-  new THREE.Vector3(0, 0.9, 0),
-  new THREE.Vector3(12, -0.2, -4.5),
-  new THREE.Vector3(24, -1.4, -9),
-  new THREE.Vector3(33, -2.2, -13),
+  new THREE.Vector3(21.5, -3.2, 9.5),    // enters frame low-right, near
+  new THREE.Vector3(13.5, -1.1, 5.8),
+  new THREE.Vector3(6.0, 0.4, 2.6),
+  new THREE.Vector3(-0.5, 0.9, -0.6),
+  new THREE.Vector3(-7.5, 2.0, -5.0),
+  new THREE.Vector3(-14.5, 2.7, -10.5),
+  new THREE.Vector3(-22.5, 3.3, -17.0),  // sinks into fog, beyond the frame
 ]);
 
-function tubeFor(curve, color, radius, opacity) {
-  const geom = new THREE.TubeGeometry(curve, 80, radius, 8, false);
+/* a layered luminous material: thin bright core inside a soft sleeve
+   inside a barely-there atmosphere. Richness, not brightness.
+   The tube tapers along the spine: thick where it enters the
+   foreground, whisper-thin as it recedes into fog — depth you feel. */
+function taperedTube(curve, radiusNear, radiusFar, color, opacity) {
+  /* sample the curve; radius shrinks from near (world x>0) to far */
+  const SEG = 96, RAD = 10;
+  const frames = curve.computeFrenetFrames(SEG, false);
+  const pts = curve.getSpacedPoints(SEG);
+  const positions = [], normals = [], uvs = [], indices = [];
+  const P = new THREE.Vector3(), N = new THREE.Vector3();
+  for (let i = 0; i <= SEG; i++) {
+    const t = i / SEG;
+    const wx = pts[i].x;
+    const k = THREE.MathUtils.clamp(wx / 21.5, 0, 1);              // 1 near, 0 far
+    const r = radiusFar + (radiusNear - radiusFar) * k;
+    const nrm = frames.normals[Math.min(i, SEG - 1)];
+    const bin = frames.binormals[Math.min(i, SEG - 1)];
+    for (let j = 0; j <= RAD; j++) {
+      const v = (j / RAD) * Math.PI * 2;
+      const sin = Math.sin(v), cos = Math.cos(v);
+      N.copy(nrm).multiplyScalar(cos).addScaledVector(bin, sin).normalize();
+      P.copy(pts[i]).addScaledVector(N, r);
+      positions.push(P.x, P.y, P.z);
+      normals.push(N.x, N.y, N.z);
+      uvs.push(t, j / RAD);
+    }
+  }
+  for (let i = 0; i < SEG; i++) {
+    for (let j = 0; j < RAD; j++) {
+      const a = i * (RAD + 1) + j, b = a + RAD + 1;
+      indices.push(a, b, a + 1, b, b + 1, a + 1);
+    }
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  geom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geom.setIndex(indices);
   const mat = new THREE.MeshBasicMaterial({
     color, transparent: true, opacity,
     blending: THREE.AdditiveBlending, depthWrite: false, fog: true,
   });
-  return new THREE.Mesh(geom, mat);
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.userData.baseOpacity = opacity;
+  return mesh;
 }
 
-/* dual tube: bright thin core inside a soft gold sleeve */
-const spineCore = tubeFor(spineCurve, FILAMENT, 0.05, 0.95);
-const spineSleeve = tubeFor(spineCurve, GOLD, 0.16, 0.20);
-scene.add(spineSleeve, spineCore);
+/* the spine: warm off-white filament, gold sleeve, faint atmosphere */
+const spineLayers = [
+  taperedTube(spineCurve, 0.055, 0.022, FILAMENT, 0.95),
+  taperedTube(spineCurve, 0.17, 0.07, GOLD, 0.18),
+  taperedTube(spineCurve, 0.40, 0.16, GOLD_SOFT, 0.05),
+];
+for (const m of spineLayers) scene.add(m);
 
 /* a sparse whisper of light travelling the spine */
 const flowVert = `
@@ -168,37 +249,33 @@ const spineFlow = flowFor(spineCurve, 0xffe9c4, 60, 0.008);
 scene.add(spineFlow);
 
 /* ------------------------------------------------------------------ */
-/* Branch timelines — they diverge upward, into depth, and quiet down.  */
-/* Anatomy mirrors the corpus: the spine is the MCU (sacred); What If  */
-/* forks early; the street-level shows split mid-spine; the three Sony */
-/* lines (Rami / Webb / SSU) and the two Fox films pair as forks.     */
-/* ------------------------------------------------------------------ */
-/* ------------------------------------------------------------------ */
-/* Branch timelines — every branch distinct, forks where history says.  */
+/* Branch timelines — visual hierarchy, not an even distribution.       */
 /*                                                                     */
-/* Fork points follow real-world chronology (when each universe first  */
-/* hit screens and diverged from what became the Sacred Timeline):    */
-/*   2000 Fox X-Men · 2002 Raimi Spider-Man · 2005 Fox Fantastic Four  */
-/*   2012 Amazing Spider-Man · 2015 street-level Defenders            */
-/*   2018 SSU (Venom) · 2018 Spider-Verse · 2021 What If...?           */
+/* PRIMARY: a few clear gestures (defenders, whatif — the deep         */
+/* holdings). SECONDARY: supporting lines (fox x-men, ssu,            */
+/* spider-verse). DISTANT: whispers that fade early (rami, webb,       */
+/* fox:ff — the archive holds little or nothing of these).            */
 /*                                                                     */
-/* Branch length encodes archive holdings (documents ingested):        */
-/*   defenders 295 · mcu 144 (spine) · whatif 28 · fox:xmen 13 ·       */
-/*   sony:ssu 8 (incl. Spider-Verse) · rami 3 · webb 2                 */
-/*                                                                     */
-/* fox:ff is a real universe the archive doesn't hold yet — visible,   */
-/* hover-labeled, but not selectable. The pruned stub is atmosphere.   */
+/* Fork t follows real chronology along the spine (2000 → 2021);       */
+/* reach follows archive holdings. fox:ff is visible but not          */
+/* searchable; the pruned stub is atmosphere.                          */
 /* ------------------------------------------------------------------ */
+const TIER = {
+  primary:   { core: 0.036, coreOp: 0.80, sleeve: 0.100, sleeveOp: 0.13 },
+  secondary: { core: 0.028, coreOp: 0.55, sleeve: 0.075, sleeveOp: 0.09 },
+  distant:   { core: 0.019, coreOp: 0.32, sleeve: 0.050, sleeveOp: 0.05 },
+};
+
 const branchSpecs = [
-  { key: 'fox:xmen',         label: 'FOX X-MEN',                      t: 0.20, len: 0.80, dir: [ 0.45,  0.80, -0.25], color: BRANCH },
-  { key: 'sony:rami',        label: "TOBEY MAGUIRE'S SPIDER-MAN",      t: 0.28, len: 0.38, dir: [ 0.60,  0.75,  0.10], color: BRANCH_DEEP },
-  { key: 'fox:ff',           label: 'FOX FANTASTIC FOUR',              t: 0.36, len: 0.42, dir: [-0.80,  0.30,  0.40], color: BRANCH_DEEP },
-  { key: 'sony:webb',        label: 'THE AMAZING SPIDER-MAN',          t: 0.47, len: 0.30, dir: [ 0.55,  0.80, -0.10], color: BRANCH_DEEP },
-  { key: 'defenders',        label: 'THE DEFENDERS',                   t: 0.57, len: 1.00, dir: [ 0.30, -0.85,  0.30], color: BRANCH_DEEP },
-  { key: 'sony:ssu',         label: 'SSU — VENOM · MORBIUS · KRAVEN',  t: 0.66, len: 0.55, dir: [ 0.80,  0.35, -0.30], color: BRANCH_DEEP },
-  { key: 'sony:spiderverse', label: 'SPIDER-VERSE (ANIMATED)',         t: 0.75, len: 0.48, dir: [-0.60,  0.45,  0.60], color: BRANCH },
-  { key: 'whatif',           label: 'WHAT IF...?',                     t: 0.84, len: 0.70, dir: [ 0.05,  0.90, -0.35], color: BRANCH },
-  { key: 'pruned',           label: 'A PRUNED BRANCH',                 t: 0.93, len: 0.22, dir: [-0.30, -0.70,  0.40], color: PRUNED, pruned: true },
+  { key: 'fox:xmen',         label: 'FOX X-MEN',                     t: 0.13, len: 0.80, dir: [-0.15, 0.75, -0.35], color: BRANCH,      tier: 'secondary' },
+  { key: 'sony:rami',        label: "TOBEY MAGUIRE'S SPIDER-MAN",    t: 0.21, len: 0.45, dir: [ 0.25, 0.55,  0.45], color: BRANCH_DEEP, tier: 'distant'   },
+  { key: 'fox:ff',           label: 'FOX FANTASTIC FOUR',            t: 0.30, len: 0.42, dir: [-0.50, 0.45, -0.55], color: BRANCH_DEEP, tier: 'distant'   },
+  { key: 'sony:webb',        label: 'THE AMAZING SPIDER-MAN',        t: 0.39, len: 0.40, dir: [ 0.30, 0.60,  0.25], color: BRANCH_DEEP, tier: 'distant'   },
+  { key: 'defenders',        label: 'THE DEFENDERS',                 t: 0.50, len: 1.00, dir: [ 0.45, 0.85,  0.15], color: BRANCH,      tier: 'primary'   },
+  { key: 'sony:ssu',         label: 'SSU — VENOM · MORBIUS · KRAVEN', t: 0.61, len: 0.62, dir: [ 0.70, 0.40,  0.20], color: BRANCH,      tier: 'secondary' },
+  { key: 'sony:spiderverse', label: 'SPIDER-VERSE (ANIMATED)',       t: 0.70, len: 0.50, dir: [-0.55, 0.50, -0.40], color: BRANCH,      tier: 'secondary' },
+  { key: 'whatif',           label: 'WHAT IF...?',                   t: 0.80, len: 0.85, dir: [-0.10, 0.95, -0.15], color: BRANCH,      tier: 'primary'   },
+  { key: 'pruned',           label: 'A PRUNED BRANCH',               t: 0.90, len: 0.25, dir: [-0.40, -0.55, 0.30], color: PRUNED,      tier: 'distant', pruned: true },
 ];
 
 const branches = [];
@@ -210,37 +287,41 @@ for (const spec of branchSpecs) {
   const reach = 10 * spec.len;
   const pts = [
     origin.clone(),
-    origin.clone().addScaledVector(d, reach * 0.28).add(new THREE.Vector3(0, 0.6, 0)),
-    origin.clone().addScaledVector(d, reach * 0.6).add(new THREE.Vector3(d.x * 1.4, 1.2, d.z * 1.4)),
-    origin.clone().addScaledVector(d, reach * 0.85).add(new THREE.Vector3(d.x * 2.4, 1.6, d.z * 2.4)),
+    origin.clone().addScaledVector(d, reach * 0.28).add(new THREE.Vector3(0, 0.5, 0)),
+    origin.clone().addScaledVector(d, reach * 0.6).add(new THREE.Vector3(d.x * 1.2, 1.0, d.z * 1.2)),
+    origin.clone().addScaledVector(d, reach * 0.85).add(new THREE.Vector3(d.x * 2.0, 1.4, d.z * 2.0)),
   ];
   const curve = new THREE.CatmullRomCurve3(pts);
-  const tube = tubeFor(curve, spec.color, spec.pruned ? 0.02 : 0.042, spec.pruned ? 0.5 : 0.6);
-  tube.userData.pick = spec.key;            // raycast target
-  scene.add(tube);
+  const tier = TIER[spec.tier];
+  /* branches taper away from the spine: full tier radius at the fork,
+     half at the tip — they thin as they leave the sacred timeline */
+  const layers = [
+    taperedTube(curve, tier.core, tier.core * 0.55, spec.color, spec.pruned ? 0.5 : tier.coreOp),
+    taperedTube(curve, tier.sleeve, tier.sleeve * 0.55, spec.color, spec.pruned ? 0.10 : tier.sleeveOp),
+  ];
+  for (const m of layers) scene.add(m);
 
   /* screen-space pick LUT — sampled world points along the curve */
   const pickLUT = [];
   for (const p of curve.getSpacedPoints(24)) pickLUT.push(p.x, p.y, p.z);
 
-  /* one small light at the fork — a temporal junction, nothing more */
+  /* one small light at the fork — sized by the branch's importance */
+  const lightScale = { primary: 0.9, secondary: 0.6, distant: 0.42 }[spec.tier];
   const light = new THREE.Sprite(new THREE.SpriteMaterial({
     map: GLOW, color: spec.pruned ? PRUNED : GOLD_SOFT,
-    transparent: true, opacity: spec.pruned ? 0.35 : 0.5,
+    transparent: true, opacity: spec.pruned ? 0.35 : (spec.tier === 'primary' ? 0.55 : 0.42),
     blending: THREE.AdditiveBlending, depthWrite: false,
   }));
   light.position.copy(origin);
-  light.scale.setScalar(spec.pruned ? 0.4 : 0.65);
+  light.scale.setScalar(spec.pruned ? 0.4 : lightScale);
   scene.add(light);
 
   const tip = curve.getPointAt(0.92);
-  branches.push({ spec, tube, curve, tip, pickLUT, baseColor: new THREE.Color(spec.color), hover: 0, selected: false });
+  branches.push({ spec, layers, curve, tip, pickLUT, baseColor: new THREE.Color(spec.color), hover: 0, selected: false });
   forkLights.push({ light, spec });
 }
 
 /* the spine is pickable too — it is the MCU */
-spineCore.userData.pick = 'mcu';
-spineSleeve.userData.pick = 'mcu';
 const spinePickLUT = [];
 for (const p of spineCurve.getSpacedPoints(60)) spinePickLUT.push(p.x, p.y, p.z);
 
@@ -310,7 +391,7 @@ scene.add(stars);
 /* a branch selects that timeline for the search.                      */
 /* ------------------------------------------------------------------ */
 const labelSpecs = [
-  { key: 'mcu', text: 'SACRED TIMELINE · MCU', anchor: () => spineCurve.getPointAt(0.5).add(new THREE.Vector3(0, -1.2, 0)) },
+  { key: 'mcu', text: 'SACRED TIMELINE · MCU', anchor: () => spineCurve.getPointAt(0.52).add(new THREE.Vector3(0, -1.4, 0)) },
   ...branches.map((b) => ({ key: b.spec.key, text: b.spec.label, anchor: () => b.tip, pruned: !!b.spec.pruned })),
 ];
 
@@ -388,7 +469,6 @@ container.addEventListener('pointermove', (e) => {
   hoverKey = pickAt(pointer.x, pointer.y);
   const clickable = hoverKey && hoverKey !== 'pruned';
   container.style.cursor = clickable ? 'pointer' : '';
-  if (clickable) controls.autoRotate = false;   // the user is engaging — hold the frame still
 });
 container.addEventListener('pointerleave', () => {
   pointer.x = -1e4; pointer.y = -1e4; hoverKey = null;
@@ -404,7 +484,7 @@ container.addEventListener('click', () => {
 });
 
 /* ------------------------------------------------------------------ */
-/* Highlight bridge — evidence rows warm a branch toward gold (SP3).   */
+/* Highlight bridge — evidence rows warm a branch toward gold.          */
 /* ------------------------------------------------------------------ */
 let highlighted = null;
 const GOLD_HL = new THREE.Color(0xd9a45b);
@@ -418,7 +498,7 @@ window.__sceneState = () => ({
   highlighted,
   selected: selectedKey,
   hover: hoverKey,
-  branchColors: Object.fromEntries(branches.map((b) => [b.spec.key, b.tube.material.color.getHexString()])),
+  branchColors: Object.fromEntries(branches.map((b) => [b.spec.key, b.layers[0].material.color.getHexString()])),
 });
 
 /* ------------------------------------------------------------------ */
@@ -474,19 +554,18 @@ function tick() {
     b.hover += ((isHover || isSel || isHi) ? 1 : -1) * 0.1;
     b.hover = THREE.MathUtils.clamp(b.hover, 0, 1);
     const target = isSel || isHi ? GOLD_HL : b.baseColor;
-    b.tube.material.color.lerp(target, isSel || isHi ? 0.08 : 0.05);
-    b.tube.material.opacity = (b.spec.pruned ? 0.5 : 0.55) + b.hover * 0.35;
+    for (const m of b.layers) {
+      m.material.color.lerp(target, isSel || isHi ? 0.08 : 0.05);
+      m.material.opacity = m.userData.baseOpacity * (1 + b.hover * 0.6);
+    }
   }
-  /* spine responds to selection/highlight too */
-  const spineActive = selectedKey === 'mcu' || highlighted === 'mcu' || !selectedKey;
-  spineCore.material.opacity = 0.95;
 
-  /* spine dims slightly when another timeline is selected */
-  spineCore.material.opacity = selectedKey && selectedKey !== 'mcu' && highlighted !== 'mcu' ? 0.55 : 0.95;
-  spineSleeve.material.opacity = selectedKey && selectedKey !== 'mcu' ? 0.10 : 0.16;
+  /* the spine dims slightly when another timeline is selected */
+  const spineF = selectedKey && selectedKey !== 'mcu' && highlighted !== 'mcu' ? 0.55 : 1;
+  for (const m of spineLayers) m.material.opacity = m.userData.baseOpacity * spineF;
 
   controls.update();
-  updateLabels();
+  if (!window.__framed) updateLabels();
   composer.render();
 }
 
@@ -496,8 +575,40 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) clock.getDelta();
 });
 
-/* probe hook for art-direction verification: luminance grid + structure */
+/* composition hook for art-direction verification: where does everything
+   land on screen? (px, y-down, viewport-relative) */
+window.__compose = () => {
+  const project = (p) => {
+    v.copy(p).project(camera);
+    return { x: (v.x * 0.5 + 0.5) * window.innerWidth, y: (-v.y * 0.5 + 0.5) * window.innerHeight, z: v.z };
+  };
+  const spine = spineCurve.getSpacedPoints(48).map(project);
+  const branchBoxes = branches.map((b) => {
+    const pts = curveScreen(b);
+    return {
+      key: b.spec.key,
+      min: { x: Math.min(...pts.map((p) => p.x)), y: Math.min(...pts.map((p) => p.y)) },
+      max: { x: Math.max(...pts.map((p) => p.x)), y: Math.max(...pts.map((p) => p.y)) },
+    };
+  });
+  function curveScreen(b) {
+    return b.curve.getSpacedPoints(16).map(project);
+  }
+  return {
+    viewport: { w: window.innerWidth, h: window.innerHeight },
+    spine,
+    branchBoxes,
+  };
+};
+
+/* live art-direction hook: camera + controls, for calibration */
+window.__cam = { camera, controls, spineCurve: () => spineCurve };
+
+/* probe hook for art-direction verification: luminance grid + structure.
+   render() right before readPixels keeps the buffer readable without
+   preserveDrawingBuffer (which caused iframe-overlay compositing bugs). */
 window.__probe = () => {
+  composer.render();
   const gl = renderer.getContext();
   const W = gl.drawingBufferWidth, H = gl.drawingBufferHeight;
   const px = new Uint8Array(W * H * 4);
@@ -512,10 +623,7 @@ window.__probe = () => {
       for (let y = Math.floor(gy * H / GY); y < Math.floor((gy + 1) * H / GY); y += 4) {
         for (let x = Math.floor(gx * W / GX); x < Math.floor((gx + 1) * W / GX); x += 4) {
           const i = (y * W + x) * 4;
-          const a = px[i + 3] / 255;
-          if (a < 0.05) { continue; }
-          const r = px[i] / 255 * a, g = px[i + 1] / 255 * a, b = px[i + 2] / 255 * a;
-          const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          const lum = (0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]) / 255;
           sum += lum; n++;
           if (lum > 0.92) hot++;
         }
@@ -526,9 +634,7 @@ window.__probe = () => {
   }
   let total = 0, hotTotal = 0;
   for (let i = 0; i < W * H * 4; i += 4) {
-    const a = px[i + 3] / 255;
-    if (a < 0.05) continue;
-    const lum = (0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]) / 255 * a;
+    const lum = (0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]) / 255;
     total++;
     if (lum > 0.92) hotTotal++;
   }

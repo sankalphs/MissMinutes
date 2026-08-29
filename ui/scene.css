@@ -7,13 +7,13 @@ html, body {
   background: #060913;
 }
 
-/* deep-space vignette behind the transparent canvas */
+/* deep-space vignette now painted inside the WebGL scene (opaque canvas);
+   this element is the non-WebGL fallback background only */
 #scene-root {
   position: absolute;
   inset: 0;
   cursor: grab;
-  background:
-    radial-gradient(ellipse 130% 90% at 68% 38%, #101735 0%, #0a0f22 34%, #060913 72%, #03040a 100%);
+  background: #060913;
 }
 #scene-root:active { cursor: grabbing; }
 

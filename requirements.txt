@@ -1,5 +1,5 @@
-fastapi==0.115.12
-uvicorn[standard]==0.34.2
+fastapi>=0.115
+uvicorn[standard]>=0.34
 pydantic==2.11.4
 pydantic-settings==2.9.1
 python-dotenv==1.1.0
@@ -7,7 +7,7 @@ httpx==0.28.1
 neo4j==5.28.1
 qdrant-client==1.14.2
 sentence-transformers==5.0.0
-gradio==5.29.0
+gradio==6.26.0
 srt==3.5.0
 webvtt-py==1.0.2
 python-slugify==8.0.4

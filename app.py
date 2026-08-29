@@ -2,8 +2,9 @@
 
 Deep-blue void, warm paper text, one white-gold timeline filament. The
 hero is a Three.js scene served by src/ui/scene_server.py at /scene and
-embedded full-bleed; search + editorial content sit in a centered
-readable column. Design tokens in ui/DESIGN_TOKENS.md.
+embedded full-bleed; the whole page lives inside one continuous dark
+environment — hero, search, answer, evidence, all the same void.
+Design tokens in ui/DESIGN_TOKENS.md.
 """
 from __future__ import annotations
 
@@ -26,40 +27,37 @@ logger = logging.getLogger("missminutes.ui")
 
 UI_DIR = Path(__file__).resolve().parent / "ui"
 CSS = (UI_DIR / "app.css").read_text(encoding="utf-8")
-HEAD = """
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script>
-/* branch click -> timeline scope, synced through the hidden scope textbox */
-window.addEventListener('message', function (e) {
-  var d = e.data;
-  if (!d || d.type !== 'timeline-select') return;
-  var sel = document.getElementById('selection-note');
-  var pretty = { mcu: 'MCU', whatif: 'What If...?', 'sony:rami': "Tobey Maguire's Spider-Man",
-                 'sony:webb': 'Amazing Spider-Man', 'sony:ssu': 'Sony Universe — Venom · Morbius · Kraven',
-                 'sony:spiderverse': 'Spider-Verse (animated)', 'fox:xmen': 'Fox X-Men',
-                 'fox:ff': 'Fox Fantastic Four', defenders: 'The Defenders' };
-  if (sel) sel.textContent = d.timeline ? 'SCOPE · ' + (pretty[d.timeline] || d.timeline).toUpperCase() : '';
-  var box = document.querySelector('#scope-tb textarea');
-  if (box) {
-    box.value = d.timeline || '';
-    box.dispatchEvent(new Event('input', { bubbles: true }));
-  }
-});
-/* evidence hover -> warm the matching branch in the hero (delegated: the
-   evidence list is re-rendered by gradio after every search) */
-document.addEventListener('mouseover', function (e) {
-  var chunk = e.target.closest ? e.target.closest('#evidence .chunk[data-timeline]') : null;
-  var hero = document.querySelector('#hero iframe');
-  if (chunk && hero) hero.contentWindow.postMessage({ type: 'highlight', branch: chunk.dataset.timeline }, '*');
-});
-document.addEventListener('mouseout', function (e) {
-  var chunk = e.target.closest ? e.target.closest('#evidence .chunk[data-timeline]') : null;
-  var hero = document.querySelector('#hero iframe');
-  if (chunk && hero) hero.contentWindow.postMessage({ type: 'highlight', branch: null }, '*');
-});
-</script>
+
+# injected by mount_gradio_app(js=…) — runs before the app mounts, one place
+# for every bridge: branch click -> scope, evidence hover -> hero highlight
+JS = """
+() => {
+  window.addEventListener('message', function (e) {
+    var d = e.data;
+    if (!d || d.type !== 'timeline-select') return;
+    var sel = document.getElementById('selection-note');
+    var pretty = { mcu: 'MCU', whatif: 'What If...?', 'sony:rami': "Tobey Maguire's Spider-Man",
+                   'sony:webb': 'Amazing Spider-Man', 'sony:ssu': 'Sony Universe — Venom · Morbius · Kraven',
+                   'sony:spiderverse': 'Spider-Verse (animated)', 'fox:xmen': 'Fox X-Men',
+                   'fox:ff': 'Fox Fantastic Four', defenders: 'The Defenders' };
+    if (sel) sel.textContent = d.timeline ? 'SCOPE · ' + (pretty[d.timeline] || d.timeline).toUpperCase() : '';
+    var box = document.querySelector('#scope-tb textarea');
+    if (box) {
+      box.value = d.timeline || '';
+      box.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
+  document.addEventListener('mouseover', function (e) {
+    var chunk = e.target.closest ? e.target.closest('#evidence .chunk[data-timeline]') : null;
+    var hero = document.querySelector('#hero iframe');
+    if (chunk && hero) hero.contentWindow.postMessage({ type: 'highlight', branch: chunk.dataset.timeline }, '*');
+  });
+  document.addEventListener('mouseout', function (e) {
+    var chunk = e.target.closest ? e.target.closest('#evidence .chunk[data-timeline]') : null;
+    var hero = document.querySelector('#hero iframe');
+    if (chunk && hero) hero.contentWindow.postMessage({ type: 'highlight', branch: null }, '*');
+  });
+}
 """
 
 SCENE_IFRAME = """
@@ -68,9 +66,9 @@ SCENE_IFRAME = """
           loading="eager" allow="fullscreen"></iframe>
   <div class="hero-hint">HOVER A BRANCH — CLICK TO SCOPE YOUR SEARCH TO THAT TIMELINE</div>
   <div class="brandblock">
-    <h1>MISS<br/>MINUTES</h1>
-    <p class="tagline">the multiverse archive</p>
-    <p class="lede">Search every timeline, branch, event and universe.</p>
+    <p class="kicker">THE MULTIVERSE ARCHIVE</p>
+    <h1>Miss Minutes</h1>
+    <p class="lede">Search every timeline, branch and universe.</p>
   </div>
 </div>
 """
@@ -239,7 +237,7 @@ def run_example(question: str, timeline: str):
 
 
 def build_app() -> gr.Blocks:
-    with gr.Blocks(title="MissMinutes — the multiverse archive", head=HEAD) as app:
+    with gr.Blocks(title="MissMinutes — the multiverse archive") as app:
         gr.HTML(TOPBAR)
         gr.HTML(SCENE_IFRAME)
 
@@ -261,7 +259,7 @@ def build_app() -> gr.Blocks:
                 show_label=False,
                 elem_id="timeline-filter",
             )
-            scope_tb = gr.Textbox(value="", elem_id="scope-tb")
+            scope_tb = gr.Textbox(value="", elem_id="scope-tb", visible=False)
             gr.HTML("<div id='selection-note'></div>")
 
         with gr.Column(elem_id="examples"):
@@ -297,8 +295,7 @@ if __name__ == "__main__":
     import uvicorn
 
     from src.ui.scene_server import scene_app
-
     blocks = build_app()
     blocks.queue()
-    gr.mount_gradio_app(scene_app, blocks, path="/", css=CSS, head=HEAD)
+    gr.mount_gradio_app(scene_app, blocks, path="/", css=CSS, js=JS)
     uvicorn.run(scene_app, host="0.0.0.0", port=7860)

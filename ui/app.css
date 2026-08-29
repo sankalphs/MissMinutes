@@ -1,19 +1,18 @@
 /* ===================================================================
    MissMinutes — a cinematic multiverse archive.
-   Deep-blue void, warm paper text, one white-gold timeline filament.
-   Gold is rare: focus, active state, the sacred timeline. Nothing else.
 
-   Layout: full-bleed cinematic hero, then a centered readable column
-   (search + editorial content). No section rectangles — hierarchy comes
-   from spacing, translucent surfaces, and hairlines.
+   ONE continuous visual environment: deep blue-black from the first
+   pixel of the hero to the last pixel of the colophon. No white page,
+   no hard seams — the hero dissolves atmospherically into the content
+   void. Gold is rare: focus, active state, the sacred timeline.
    =================================================================== */
 
 :root {
-  --void: #060913;
-  --void-2: #0A0F22;
-  --surface: rgba(13, 17, 34, 0.55);
+  --void: #060913;            /* hero */
+  --void-2: #090D18;           /* content — same universe, one breath lighter */
+  --surface: rgba(16, 22, 37, 0.62);
   --surface-2: rgba(20, 26, 48, 0.45);
-  --line: rgba(139, 147, 181, 0.14);
+  --line: rgba(139, 147, 181, 0.16);
   --hairline: rgba(242, 238, 227, 0.08);
 
   --paper: #F2EEE3;           /* primary text — warm off-white */
@@ -21,7 +20,7 @@
   --chrono: #8B93B5;          /* secondary text — cool gray-blue */
   --chrono-dim: #565E82;
 
-  --gold: #D9A45B;           /* rare. focus, active, the sacred timeline */
+  --gold: #D9A45B;            /* rare. focus, active, the sacred timeline */
   --gold-hot: #EDC98F;
   --gold-dim: #8A6B34;
   --branch: #7C8AC4;          /* branch timelines / soft blue */
@@ -34,14 +33,20 @@
   --content-w: 720px;
 }
 
+/* fonts — head links are dropped by gradio 6 Blocks(); inject via css() */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
 /* ------------------------------------------------------------------ */
-/* Gradio neutralization — the page must not reveal its framework.    */
+/* Gradio 6 neutralization — the page must not reveal its framework.   */
+/*                                                                     */
+/* The 6.x DOM adds two white layers the 5.x CSS never knew:           */
+/*   <gradio-app> (the custom-element host, background #fff)           */
+/*   [data-testid="status-tracker"] wrappers (white when status set)   */
 /* ------------------------------------------------------------------ */
 
-html, body {
-  background: var(--void) !important;
-}
+html, body { background: var(--void-2) !important; }
 
+gradio-app,
 .gradio-container {
   background: transparent !important;
   font-family: var(--sans) !important;
@@ -51,6 +56,13 @@ html, body {
   color: var(--paper);
 }
 
+[data-testid="status-tracker"],
+.status-wrap {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
 /* kill every default card, panel, inset, and gap gradio adds */
 .main,
 .gap,
@@ -58,8 +70,8 @@ html, body {
 .form,
 .panel,
 .contain,
+.wrap,
 footer,
-.gradio-container > .footer,
 div[class*="footer"] {
   background: transparent !important;
   border: none !important;
@@ -77,18 +89,10 @@ div[class*="footer"] {
 .column { gap: 0 !important; }
 
 .html-container { padding: 0 !important; }
-
 .block.hide-container { padding: 0 !important; }
 
-/* hide gradio's built-in footer ("Built with Gradio", API, settings) */
-.gradio-container .footer,
-gradio-footer { display: none !important; }
-
-/* the hidden pipeline-status textbox must not leave an empty block */
-.block:has(> textarea[aria-label="status"]:only-child) { display: none !important; }
-
-/* gradio wraps gr.HTML in .prose with 24px insets — all static prose
-   blocks become the centered readable column; #herowrap overrides below */
+/* gradio wraps gr.HTML in .prose with insets — static prose blocks
+   become the centered readable column; #herowrap overrides below */
 :where(.gradio-container) .prose {
   padding: 0 24px !important;
   margin: 0 auto !important;
@@ -98,6 +102,12 @@ gradio-footer { display: none !important; }
   line-height: inherit !important;
   max-width: var(--content-w);
 }
+
+/* hide gradio's built-in footer ("Built with Gradio", API, settings) */
+.gradio-container .footer,
+gradio-footer,
+gradio-clipboard,
+gradio-guide { display: none !important; }
 
 /* ------------------------------------------------------------------ */
 /* 1 — topbar: a quiet floating status line on the void               */
@@ -131,21 +141,6 @@ gradio-footer { display: none !important; }
   font-size: 11.5px;
 }
 
-/* hero interaction hint — bottom-right, whisper quiet */
-.hero-hint {
-  position: absolute;
-  right: clamp(24px, 4vw, 48px);
-  bottom: clamp(20px, 4vh, 36px);
-  z-index: 5;
-  font-family: var(--mono);
-  font-size: 9.5px;
-  letter-spacing: 0.2em;
-  color: rgba(139, 147, 181, 0.5);
-  text-transform: uppercase;
-  pointer-events: none;
-  transition: opacity 1s ease;
-}
-
 #topbar .status {
   font-family: var(--mono);
   font-size: 10.5px;
@@ -165,16 +160,18 @@ gradio-footer { display: none !important; }
 }
 
 /* ------------------------------------------------------------------ */
-/* 2 — hero: full-bleed cinematic frame                                */
-/*     its prose wrapper is escaped above via :has(> #hero)            */
+/* 2 — hero: full-bleed cinematic frame, dissolving into the page       */
 /* ------------------------------------------------------------------ */
 
 #hero {
   position: relative;
   width: 100%;
   height: 66vh;
-  min-height: 460px;
-  background: var(--void);
+  min-height: 480px;
+  /* the hero void sits on the content void; the seam dissolves below */
+  background:
+    radial-gradient(ellipse 120% 70% at 50% 0%, var(--void) 0%, transparent 70%),
+    var(--void-2);
   overflow: hidden;
 }
 
@@ -185,46 +182,61 @@ gradio-footer { display: none !important; }
   border: none;
 }
 
-/* the seam: hero dissolves into the page void */
+/* the seam: hero atmosphere continues into the content void — no cutoff */
 #hero::after {
   content: '';
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 180px;
-  background: linear-gradient(180deg, transparent, var(--void) 92%);
+  height: 240px;
+  background: linear-gradient(180deg, transparent 0%, var(--void-2) 96%);
   pointer-events: none;
 }
 
-/* brand block — restrained, lower-left, inside the hero */
+/* hero interaction hint — bottom-right, whisper quiet */
+.hero-hint {
+  position: absolute;
+  right: clamp(24px, 4vw, 48px);
+  bottom: clamp(20px, 4vh, 36px);
+  z-index: 5;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  color: rgba(139, 147, 181, 0.5);
+  text-transform: uppercase;
+  pointer-events: none;
+  transition: opacity 1s ease;
+}
+
+/* brand block — refined display type, lower-left, reserved negative space */
 #hero .brandblock {
   position: absolute;
   left: clamp(24px, 5vw, 72px);
-  bottom: clamp(28px, 6vh, 64px);
+  bottom: clamp(48px, 10vh, 104px);
   z-index: 5;
   pointer-events: none;
 }
 
-#hero .brandblock h1 {
-  font-family: var(--sans);
-  font-weight: 200;
-  font-size: clamp(40px, 6vw, 76px);
-  line-height: 0.98;
-  letter-spacing: 0.16em;
-  color: var(--paper);
+#hero .brandblock .kicker {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.34em;
+  color: var(--gold);
+  opacity: 0.85;
+  text-transform: uppercase;
   margin: 0 0 14px;
-  text-shadow: 0 2px 24px rgba(6, 9, 19, 0.8);
 }
 
-#hero .brandblock .tagline {
+#hero .brandblock h1 {
   font-family: var(--serif);
-  font-style: italic;
-  font-size: clamp(17px, 2vw, 22px);
-  color: var(--gold);
-  opacity: 0.92;
-  margin: 0 0 10px;
-  letter-spacing: 0.02em;
+  font-weight: 400;
+  font-size: clamp(44px, 5.2vw, 64px);
+  line-height: 1.02;
+  letter-spacing: 0.01em;
+  color: var(--paper);
+  margin: 0 0 16px;
+  text-shadow: 0 2px 32px rgba(3, 4, 10, 0.9);
 }
 
 #hero .brandblock .lede {
@@ -234,15 +246,19 @@ gradio-footer { display: none !important; }
   max-width: 34ch;
   line-height: 1.55;
   margin: 0;
+  text-shadow: 0 1px 18px rgba(3, 4, 10, 0.9);
 }
 
 /* ------------------------------------------------------------------ */
-/* 3 — search experience: centered, generous, part of the flow         */
+/* 3 — search experience: a dedicated zone, part of the flow            */
 /* ------------------------------------------------------------------ */
 
+/* the search zone sits just past the hero's atmospheric seam; the scope
+   list opens upward and must paint over page void, never over the
+   WebGL iframe (Chromium drops filled rects over accelerated iframes) */
 #searchzone {
   max-width: var(--content-w);
-  margin: -72px auto 0;      /* pull up over the hero seam */
+  margin: 64px auto 0;
   position: relative;
   z-index: 6;
   padding: 0 24px;
@@ -261,7 +277,7 @@ gradio-footer { display: none !important; }
   font-style: italic;
   font-size: 22px;
   color: var(--chrono);
-  margin: 0 auto 18px;
+  margin: 0 auto 20px;
   text-align: center;
 }
 
@@ -282,14 +298,14 @@ gradio-footer { display: none !important; }
 #searchrow .block,
 #searchrow .wrap { background: transparent !important; padding: 0 !important; }
 
-/* the search surface — one translucent pill, no heavy borders */
+/* the search surface — one translucent pill, no heavy borders.
+   backdrop-filter removed: it also creates a stacking context, and the
+   search pill's neighbors (scope list) must not be trapped under the hero. */
 #searchzone .query-box textarea {
   width: 100%;
   box-sizing: border-box;
   height: 62px;
   background: var(--surface) !important;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
   color: var(--paper) !important;
   border: 1px solid var(--line) !important;
   border-radius: 999px !important;
@@ -297,7 +313,7 @@ gradio-footer { display: none !important; }
   font-family: var(--sans) !important;
   font-weight: 400;
   padding: 0 132px 0 52px !important;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(242, 238, 227, 0.05) !important;
+  box-shadow: 0 12px 44px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(242, 238, 227, 0.05) !important;
   transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
   resize: none !important;
   overflow: hidden;
@@ -306,9 +322,9 @@ gradio-footer { display: none !important; }
 
 #searchzone .query-box textarea:focus {
   border-color: rgba(217, 164, 91, 0.45) !important;
-  background: rgba(13, 17, 34, 0.72) !important;
+  background: rgba(16, 22, 37, 0.78) !important;
   box-shadow:
-    0 8px 40px rgba(0, 0, 0, 0.5),
+    0 12px 44px rgba(0, 0, 0, 0.55),
     0 0 0 4px rgba(217, 164, 91, 0.10),
     inset 0 1px 0 rgba(242, 238, 227, 0.06) !important;
   outline: none !important;
@@ -377,14 +393,13 @@ gradio-footer { display: none !important; }
 #searchzone button.primary:active,
 #searchbtn:active {
   background: rgba(217, 164, 91, 0.18) !important;
-  transform: translateY(-50%);
 }
 
 #searchbtn:active { transform: translateY(-50%); }
 #searchzone button.primary:active { transform: none; }
 
 /* the scope bridge textbox — present in DOM for the scene click message,
-   invisible to humans */
+   invisible to humans (visible=False on the gradio side too) */
 #scope-tb {
   height: 0 !important;
   min-height: 0 !important;
@@ -397,13 +412,9 @@ gradio-footer { display: none !important; }
   position: absolute !important;
   width: 1px !important;
 }
-#scope-tb textarea { height: 0 !important; min-height: 0 !important; padding: 0 !important; border: none !important; background: transparent !important; }
-
-/* timeline filter — the real dropdown, restyled to quiet mono text */
-#searchzone #timeline-filter { margin-top: 14px; }
 
 #selection-note {
-  margin-top: 10px;
+  margin-top: 12px;
   min-height: 14px;
   font-family: var(--mono);
   font-size: 10px;
@@ -414,27 +425,106 @@ gradio-footer { display: none !important; }
   transition: opacity 0.4s ease;
 }
 
+/* ------------------------------------------------------------------ */
+/* scope selector — one system with the search input: same translucent */
+/* surface, same hairline, same radius language. A quiet inline chip,  */
+/* never a form element.                                                */
+/* ------------------------------------------------------------------ */
+
 #timeline-filter {
+  margin-top: 18px !important;
+  width: 300px;
+  margin-left: auto !important;
+  margin-right: auto !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
 }
 
-#timeline-filter .wrap,
-#timeline-filter label,
-#timeline-filter span {
-  color: var(--chrono-dim) !important;
+/* the inner container: the chip itself.
+   No backdrop-filter here — it would create a stacking context that traps
+   the fixed-position options list under the hero iframe. */
+#timeline-filter .container {
+  background: #101625 !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(242, 238, 227, 0.05) !important;
+  padding: 0 !important;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+#timeline-filter .container:hover,
+#timeline-filter .container:focus-within {
+  border-color: rgba(217, 164, 91, 0.35) !important;
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.4), 0 0 0 4px rgba(217, 164, 91, 0.08) !important;
+}
+
+/* the combobox input — quiet mono text inside the chip */
+#timeline-filter input,
+#timeline-filter input[role="combobox"] {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  color: var(--paper) !important;
+  font-family: var(--mono) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 12px 16px 12px 22px !important;
+  cursor: pointer;
+}
+
+#timeline-filter input::placeholder { color: var(--chrono-dim) !important; }
+
+/* the dropdown arrow — recolored to our muted blue, no chrome fill */
+#timeline-filter .icon-wrap,
+#timeline-filter .icon-wrap-parent { background: transparent !important; padding-right: 16px !important; }
+
+#timeline-filter .icon-wrap svg,
+#timeline-filter svg.dropdown-arrow {
+  fill: var(--chrono) !important;
+  opacity: 0.6;
+}
+
+#timeline-filter .wrap-inner,
+#timeline-filter .secondary-wrap,
+#timeline-filter .wrap { background: transparent !important; border: none !important; box-shadow: none !important; }
+
+/* the open options list — same elevated surface language as everything else.
+   No backdrop-filter here: over the iframe hero Chromium composites it black. */
+#timeline-filter .options {
+  background: #101625 !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 14px !important;
+  /* inset spread paints the whole card: opaque even if background
+     compositing drops over the WebGL iframe */
+  box-shadow:
+    inset 0 0 0 200px #101625,
+    0 24px 64px rgba(0, 0, 0, 0.6) !important;
+  overflow: hidden;
+}
+
+#timeline-filter .options .item {
+  color: var(--chrono) !important;
   font-family: var(--mono) !important;
   font-size: 11px !important;
   letter-spacing: 0.1em;
-  background: transparent !important;
+  padding: 11px 20px !important;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
-#timeline-filter .container {
-  background: transparent !important;
-  border: none !important;
+#timeline-filter .options .item:hover,
+#timeline-filter .options .item.active,
+#timeline-filter .options .item.selected {
+  background: rgba(217, 164, 91, 0.08) !important;
+  color: var(--gold-hot) !important;
 }
+
+#timeline-filter .options .item:first-child { border-radius: 14px 14px 0 0; }
+#timeline-filter .options .item:last-child { border-radius: 0 0 14px 14px; }
 
 /* ------------------------------------------------------------------ */
 /* 4 — examples: editorial suggestions, not pill chips                */
@@ -442,7 +532,7 @@ gradio-footer { display: none !important; }
 
 #examples {
   max-width: var(--content-w);
-  margin: 52px auto 0;
+  margin: 56px auto 0;
   padding: 0 24px;
   display: flex;
   flex-direction: column;
@@ -512,20 +602,11 @@ gradio-footer { display: none !important; }
   margin-right: 2px;
 }
 
-/* the centered readable column — every static prose block adopts it;
-   #topbar escapes (absolute) and #hero escapes (negative margins) */
-.gradio-container .prose {
-  max-width: var(--content-w);
-  margin-left: auto;
-  margin-right: auto;
-  padding: 0 24px;
-}
-
 /* ------------------------------------------------------------------ */
 /* 5 — results: centered editorial column                              */
 /* ------------------------------------------------------------------ */
 
-#read { margin-top: 64px; }
+#read { margin-top: 72px; }
 
 #read .divider {
   width: 1px;
@@ -661,26 +742,6 @@ gradio-footer { display: none !important; }
 #colophon b { color: var(--chrono); font-weight: 500; }
 
 /* ------------------------------------------------------------------ */
-/* dropdown restyle (still gradio inside)                              */
-/* ------------------------------------------------------------------ */
-
-#timeline-filter {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-}
-
-#timeline-filter .wrap,
-#timeline-filter label,
-#timeline-filter span {
-  color: var(--chrono-dim) !important;
-  font-family: var(--mono) !important;
-  font-size: 11px !important;
-  letter-spacing: 0.1em;
-}
-
-/* ------------------------------------------------------------------ */
 /* quality floor                                                       */
 /* ------------------------------------------------------------------ */
 
@@ -714,14 +775,16 @@ gradio-footer { display: none !important; }
   #hero .brandblock {
     left: 24px;
     right: 24px;
-    bottom: 96px;           /* clear of the search pill pulled over the seam */
+    bottom: 72px;
   }
 
-  #hero .brandblock h1 { font-size: clamp(34px, 11vw, 48px); }
+  #hero .brandblock h1 { font-size: clamp(36px, 10vw, 48px); }
 
-  #searchzone { margin-top: -46px; }
+  #searchzone { margin-top: 36px; }
 
   #searchzone .query-box textarea { padding: 16px 108px 16px 48px !important; font-size: 15px !important; }
+
+  #timeline-filter { width: 100%; max-width: 300px; }
 
   #examples .ex-rows { flex-direction: column; align-items: center; gap: 12px; }
 
