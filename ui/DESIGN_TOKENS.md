@@ -1,23 +1,42 @@
-"""MissMinutes design tokens — TVA/Loki identity.
+"""MissMinutes design tokens — the real TVA world (2026-08 redesign).
 
-Subject: the Time Variance Authority's retro-bureaucratic universe —
-amber cathode screens, deep temporal voids, Miss Minutes' orange warmth.
-Audience: Marvel fans asking canon questions. Job: search the timeline.
+Subject: the Time Variance Authority's field terminal — an amber cathode
+chrono-monitor with its own console input line, over cream intake
+paperwork. Audience: Marvel fans asking canon questions. Job: file the
+query, receive the stamped ruling, read the cited evidence.
 
-Palette (cathode-amber on temporal void — deliberately NOT acid-green on black):
-  --void        #0B0A14   deep temporal background
-  --panel       #14121F   raised panels (TVA filing cabinet)
-  --amber       #FFB74A   primary accent (TVA screens, Miss Minutes)
-  --amber-dim   #B87A2A   de-emphasized accent
-  --chronoline  #8A86B8   timeline lines / secondary text (temporal ink)
-  --paper       #EDE6D6   primary text (aged TVA paper documents)
-  --danger      #E4572E   pruned/branch-warning
+Palette (research-verified: Loki production designer Kasra Farahani via
+Polygon; MCU Fandom wiki). Values match ui/app.css exactly:
 
-Type: display = Bungee (poster/bureaucratic-stencil energy for headings),
-body = IBM Plex Sans (institutional clarity), mono = IBM Plex Mono
-(TVA timestamps, file numbers, chunk ids).
+  Cathode glass (monitor + console strip):
+  --glass       #0B0A14   CRT dark glass (chrono-monitor field)
+  --glass-2     #14121F   tube edge roll-off / console strip base
+  --phos        #FFB74A   amber phosphor — TVA screens, Miss Minutes
+  --phos-hot    #FFCE85   focused/hover/input text on glass
+  --phos-dim    #C08A2D   de-emphasized amber TEXT on glass (AA)
+  --phos-ghost  rgba(255,183,74,0.14)  hover fill on paper
 
-Signature: the "chronofile header" — a full-width retro CRT status bar with
-scanline shimmer + a Loki-centric branch radial in the hero, showing the
-sacred timeline as a vertical spine with branch timelines forking off it.
-"""
+  Office paper (intake forms, rulings, evidence):
+  --paper       #F0E6D2   TVA intake paper (cream file folder)
+  --paper-2     #E8DCC0   page ground beneath the paper
+  --ink         #2A2118   form ink on paper
+  --ink-soft    #5A4A38   secondary ink
+  --ink-dim     #6E5F4B   tertiary ink (AA at small sizes)
+  --stamp       #A93226   rubber-stamp red (status, redline) — AA on paper
+  --danger      #A93226   danger role aliases stamp
+  --brown       #6B4A2B   walnut paneling / evidence numerals
+
+  On glass, pruned/redline reds sit higher: #D05A48 (pruned labels),
+  #E4604C (redline) — AA on the dark field.
+
+Type: signage = Oswald (Franklin Gothic Condensed tradition — the TVA's
+confirmed signage face), body = Manrope, mono = IBM Plex Mono (the
+console input line, readouts, file numbers, chunk ids).
+
+Signature: the full-viewport chrono-monitor — inline SVG Sacred Timeline
+with six live branch lines, two pruned stubs, fork-glow markers, one
+dashed redline threshold, scanline overlay, condensed-caps readouts, and
+a phosphor sweep that loads once and retraces while a request is in
+flight. Click a branch to scope the search. The console strip attached
+beneath the tube carries the input line and scope dial; rulings land on
+paper below, rubber-stamped.
