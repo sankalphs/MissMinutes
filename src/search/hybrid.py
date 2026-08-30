@@ -53,46 +53,57 @@ def graph_search(graph: Graph, plan: QueryPlan, limit: int = 20) -> list[dict]:
     Temporal edges are stored canonically as BEFORE (a)-[:BEFORE]->(b) means
     a happened before b. 'What happened after X' walks X<-[:BEFORE]-next;
     'before X' walks X-[:BEFORE]->prev.
+
+    Degrades to [] on any graph outage — a dead Aura instance must never
+    kill a search that FTS5 + Qdrant evidence can still answer.
     """
     results: list[dict] = []
-    with graph.session() as s:
-        for name in plan.entities[:4]:
-            rows = s.run(
-                """MATCH (n) WHERE toLower(n.name) = toLower($name)
-                   OPTIONAL MATCH (n)-[r]-(m)
-                   WITH n, m, r
-                   LIMIT 30
-                   RETURN n.id AS id, n.name AS name, labels(n)[0] AS label,
-                          [x IN collect({id: m.id, name: m.name, rel: type(r)}) WHERE x.id IS NOT NULL | x][..6] AS neighbors
-                   LIMIT 5""",
-                name=name,
-            ).data()
-            results.extend(rows)
-        if plan.operation in ("next_events", "prev_events") and plan.reference_event:
-            # next_events: events AFTER the reference = incoming BEFORE edges
-            # prev_events: events BEFORE the reference = outgoing BEFORE edges
-            pattern = (
-                "(ref)-[:BEFORE*1..3]->(b)" if plan.operation == "next_events"
-                else "(b)-[:BEFORE*1..3]->(ref)"
-            )
-            rows = s.run(
-                f"""MATCH (ref:Event) WHERE toLower(ref.name) CONTAINS toLower($ref)
-                    MATCH {pattern}
-                    RETURN DISTINCT b.id AS id, b.name AS name, 'Event' AS label,
-                           b.date_precision AS precision, b.date AS date
-                    LIMIT $limit""",
-                ref=plan.reference_event, limit=limit,
-            ).data()
-            results.extend(rows)
-        if plan.operation == "find_connection" and len(plan.entities) >= 2:
-            rows = s.run(
-                """MATCH p = (a)-[*1..3]-(b)
-                   WHERE toLower(a.name) CONTAINS toLower($e1)
-                     AND toLower(b.name) CONTAINS toLower($e2)
-                   RETURN [n IN nodes(p) | n.name] AS path LIMIT 5""",
-                e1=plan.entities[0], e2=plan.entities[1],
-            ).data()
-            results.extend({"path": r["path"]} for r in rows)
+    try:
+        with graph.session() as s:
+            _graph_queries(s, plan, limit, results)
+    except Exception as e:
+        logger.warning("graph search failed (degrading to vector+lexical): %s", e)
+    return results
+
+
+def _graph_queries(s, plan: QueryPlan, limit: int, results: list[dict]) -> None:
+    for name in plan.entities[:4]:
+        rows = s.run(
+            """MATCH (n) WHERE toLower(n.name) = toLower($name)
+               OPTIONAL MATCH (n)-[r]-(m)
+               WITH n, m, r
+               LIMIT 30
+               RETURN n.id AS id, n.name AS name, labels(n)[0] AS label,
+                      [x IN collect({id: m.id, name: m.name, rel: type(r)}) WHERE x.id IS NOT NULL | x][..6] AS neighbors
+               LIMIT 5""",
+            name=name,
+        ).data()
+        results.extend(rows)
+    if plan.operation in ("next_events", "prev_events") and plan.reference_event:
+        # next_events: events AFTER the reference = incoming BEFORE edges
+        # prev_events: events BEFORE the reference = outgoing BEFORE edges
+        pattern = (
+            "(ref)-[:BEFORE*1..3]->(b)" if plan.operation == "next_events"
+            else "(b)-[:BEFORE*1..3]->(ref)"
+        )
+        rows = s.run(
+            f"""MATCH (ref:Event) WHERE toLower(ref.name) CONTAINS toLower($ref)
+                MATCH {pattern}
+                RETURN DISTINCT b.id AS id, b.name AS name, 'Event' AS label,
+                       b.date_precision AS precision, b.date AS date
+                LIMIT $limit""",
+            ref=plan.reference_event, limit=limit,
+        ).data()
+        results.extend(rows)
+    if plan.operation == "find_connection" and len(plan.entities) >= 2:
+        rows = s.run(
+            """MATCH p = (a)-[*1..3]-(b)
+               WHERE toLower(a.name) CONTAINS toLower($e1)
+                 AND toLower(b.name) CONTAINS toLower($e2)
+               RETURN [n IN nodes(p) | n.name] AS path LIMIT 5""",
+            e1=plan.entities[0], e2=plan.entities[1],
+        ).data()
+        results.extend({"path": r["path"]} for r in rows)
     return results
 
 
@@ -139,4 +150,10 @@ def hybrid_search(store: Store, vs: VectorStore, graph: Graph, query: str,
     lex = lexical_search(store, plan)
     sem = semantic_search(vs, plan, query)
     gph = graph_search(graph, plan)
-    return rerank(plan, query, lex, sem, gph)
+    ranked = rerank(plan, query, lex, sem, gph)
+    ranked["legs"] = {
+        "graph": bool(gph),
+        "vector": bool(sem),
+        "lexical": bool(lex),
+    }
+    return ranked
