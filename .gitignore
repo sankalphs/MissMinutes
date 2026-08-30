@@ -63,4 +63,9 @@ missminutes-ui.png
 .impeccable/live/pending-manual-edits.json
 .impeccable/live/deferred-svelte-component-accepts.json
 .impeccable/live/*.png
+.impeccable/review/
+.impeccable/**/*.png
 # impeccable-ignore-end
+
+# OpenCode — local skills (vendored, not tracked)
+.opencode/skills/
