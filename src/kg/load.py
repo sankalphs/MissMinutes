@@ -248,9 +248,9 @@ def _write_events(graph: Graph, batch: list[dict]) -> None:
                WITH n, r
                MATCH (t:Timeline {id: r.timeline})
                MERGE (n)-[:OCCURS_IN]->(t)
-               WITH n, r
-               MATCH (d {id: r.document})
-               MERGE (n)-[:DEPICTED_IN]->(d)""",
+                WITH n, r
+                MATCH (x) WHERE (x:Movie OR x:Episode) AND x.id = r.document
+                MERGE (n)-[:DEPICTED_IN]->(x)""",
             rows=batch,
         )
 
@@ -263,8 +263,12 @@ def _write_rels(graph: Graph, batch: list[dict]) -> None:
         for rel, rows in by_rel.items():
             s.run(
                 f"""UNWIND $rows AS r
-                    MATCH (a) WHERE a.id = r.src
-                    MATCH (b) WHERE b.id = r.dst
+                    MATCH (a) WHERE (a:Character OR a:Event OR a:Movie OR a:Episode
+                                    OR a:Location OR a:Object OR a:Organization)
+                                   AND a.id = r.src
+                    MATCH (b) WHERE (b:Character OR b:Event OR b:Movie OR b:Episode
+                                    OR b:Location OR b:Object OR b:Organization)
+                                   AND b.id = r.dst
                     MERGE (a)-[e:{rel}]->(b)
                     ON CREATE SET e.provenance = r.prov, e.created_at = timestamp()""",
                 rows=rows,

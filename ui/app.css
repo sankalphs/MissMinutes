@@ -93,6 +93,9 @@ div[class*="footer"] {
 gradio-app footer, .gradio-container footer,
 footer.wrap.svelte-zxu34v {
   display: none !important;
+  /* display:none can lose to gradio's scoped styles; visibility removes
+     the 0x0 chrome from the tab order even when it stays mounted */
+  visibility: hidden !important;
 }
 
 /* browser surfaces belong to this world */
@@ -111,6 +114,30 @@ footer.wrap.svelte-zxu34v {
 /* ------------------------------------------------------------------ */
 /* 1 — CRT topbar: the terminal chrome on the glass                     */
 /* ------------------------------------------------------------------ */
+
+/* skip-link: keyboard users land on the console in one jump */
+#skip-link {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 100;
+  padding: 8px 14px;
+  background: var(--glass);
+  border: 1.5px solid var(--phos);
+  color: var(--phos);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 4px;
+  transform: translateY(-64px);
+  transition: transform 0.15s ease;
+}
+
+#skip-link:focus {
+  transform: translateY(0);
+}
 
 .prose:has(> #crt-topbar),
 .prose:has(> #chrono) {
@@ -182,17 +209,28 @@ footer.wrap.svelte-zxu34v {
   overflow: hidden;
 }
 
-#chronoscope {
+/* the console-lap: how far the console strip rides up onto the tube.
+   Both the strip's pull-up and the CRT overlay stop here — one number,
+   both surfaces, no drift. Kept shallow (120px) so branch tips and the
+   redline stay clear of it on laptop-height crops. */
+#chrono {
+  --console-lap: 120px;
+}
+
+#chrono-desktop, #chrono-mobile { flex: 1 1 auto; min-height: 320px; display: flex; }
+#chrono-mobile { display: none !important; }
+.chronoscope {
   display: block;
   width: 100%;
+  height: 100%;
   flex: 1 1 auto;
   min-height: 320px;
 }
 
-/* the CRT's layered light on the glass */
+/* the CRT's layered light on the glass — stops where the console laps on */
 .crt-overlay {
   position: absolute;
-  inset: 0 0 288px 0;
+  inset: 0 0 var(--console-lap) 0;
   pointer-events: none;
   z-index: 5;
   background:
@@ -210,7 +248,7 @@ footer.wrap.svelte-zxu34v {
    then a slow retrace while a request is in flight (body.processing) */
 .sweep {
   position: absolute;
-  inset: 0 0 288px 0;
+  inset: 0 0 var(--console-lap) 0;
   z-index: 6;
   pointer-events: none;
   background: linear-gradient(180deg,
@@ -284,6 +322,7 @@ footer.wrap.svelte-zxu34v {
 
 .branch-g .hit { fill: none; stroke: transparent; cursor: pointer; }
 .branch-g.pruned .hit { cursor: not-allowed; }
+.spine-g .hit, .branch-g .spine-hit { fill: none; stroke: transparent; cursor: pointer; }
 
 .branch-g:hover .branch.core,
 .branch-g.hover .branch.core,
@@ -293,6 +332,21 @@ footer.wrap.svelte-zxu34v {
 .branch-g.selected .b-label { opacity: 0.95; }
 .branch-g.selected .fork-dot { r: 3.4; }
 
+/* the spine is the mcu branch group: selection and hover light the
+   sacred line itself */
+.branch-g:hover .spine.core,
+.branch-g.hover .spine.core,
+.branch-g.selected .spine.core { stroke: var(--phos-hot); }
+.branch-g.selected .spine.core { filter: none; }
+.branch-g.selected .spine.sleeve { opacity: 0.4; }
+
+/* keyboard focus on branch groups (role=button, tabindex in markup) */
+.branch-g:focus { outline: none; }
+.branch-g:focus-visible .branch.core,
+.branch-g:focus-visible .spine.core { opacity: 1; stroke: var(--phos-hot); }
+.branch-g:focus-visible .b-label { opacity: 0.95; }
+.branch-g:focus-visible .hit { stroke: rgba(255, 183, 74, 0.4); }
+
 .redline { stroke: #E4604C; stroke-width: 1.6; stroke-dasharray: 10 7; }
 .redline-txt {
   font-family: var(--mono);
@@ -300,10 +354,6 @@ footer.wrap.svelte-zxu34v {
   fill: #E4604C;
   letter-spacing: 0.2em;
 }
-
-.readouts text { font-family: var(--mono); letter-spacing: 0.18em; }
-.ro-k { fill: var(--phos-dim); font-size: 11px; }
-.ro-v { fill: var(--phos); font-size: 13px; }
 
 /* brand block — upper-left of the tube, clear of the console strip */
 .brandblock {
@@ -371,7 +421,7 @@ footer.wrap.svelte-zxu34v {
   z-index: 8;
   width: 100%;
   max-width: none;
-  margin: -224px auto 0;
+  margin: calc(-1 * 120px) auto 0;
   padding: 26px clamp(24px, 6vw, 96px) 30px;
   display: flex;
   flex-direction: column;
@@ -399,11 +449,16 @@ footer.wrap.svelte-zxu34v {
 #searchrow .block,
 #searchrow .wrap { background: transparent !important; padding: 0 !important; }
 
-/* the input line — phosphor text on the console glass */
+/* the input line — phosphor text on the console glass.
+   Fixed 60px height (inline auto-grow loses to !important): multi-line
+   queries scroll internally instead of tearing the strip geometry and
+   unmooring the FILE REQUEST key and the > prompt. */
 #searchzone .query-box textarea {
   width: 100%;
   box-sizing: border-box;
-  height: 60px;
+  height: 60px !important;
+  min-height: 60px !important;
+  max-height: 60px !important;
   background: rgba(11, 10, 20, 0.9) !important;
   color: var(--phos-hot) !important;
   border: 1.5px solid rgba(255, 183, 74, 0.35) !important;
@@ -411,14 +466,15 @@ footer.wrap.svelte-zxu34v {
   font-size: 16px !important;
   font-family: var(--mono) !important;
   font-weight: 400;
-  padding: 0 152px 0 50px !important;
+  padding: 20px 152px 0 50px !important;
   box-shadow:
     0 6px 24px rgba(0, 0, 0, 0.55),
     inset 0 1px 0 rgba(255, 183, 74, 0.08) !important;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   resize: none !important;
-  overflow: hidden;
-  line-height: 58px;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  line-height: 1.2 !important;
   letter-spacing: 0.01em;
 }
 
@@ -497,11 +553,22 @@ footer.wrap.svelte-zxu34v {
 
 #searchzone button.primary:active { transform: translateY(1px); }
 
-/* the scope bridge — collapsed, present for the chronoscope click */
+/* in flight: the key dims and stops inviting double-fires (the JS bridge
+   swallows duplicate clicks at capture phase too) */
+#searchbtn.pending, #searchbtn[disabled] {
+  opacity: 0.55 !important;
+  cursor: wait !important;
+  transform: none;
+}
+
+/* the scope bridge — collapsed AND untabbable (visibility keeps it out of
+   the tab order; the JS bridge also sets tabindex=-1 as a belt to the
+   suspenders) */
 #scope-tb {
   height: 0 !important;
   min-height: 0 !important;
   opacity: 0 !important;
+  visibility: hidden !important;
   overflow: hidden !important;
   pointer-events: none !important;
   margin: 0 !important;
@@ -620,6 +687,37 @@ footer.wrap.svelte-zxu34v {
   max-width: 56ch;
   margin: 26px auto 0;
   line-height: 1.65;
+}
+
+/* machine readouts — the console strip's own status band (moved off the
+   SVG floor, which the lap covers on every desktop size) */
+.console-readouts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 42px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.console-readouts .ro { white-space: nowrap; }
+.console-readouts .ro-k { color: var(--phos-dim); margin-right: 6px; }
+.console-readouts .ro-v { color: var(--phos); }
+
+/* in-flight progress text (the sweep is motion; this survives
+   prefers-reduced-motion) */
+#flight-note {
+  min-height: 15px;
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  color: var(--phos-hot);
+  text-transform: uppercase;
+  text-align: center;
 }
 
 /* ------------------------------------------------------------------ */
@@ -851,6 +949,34 @@ footer.wrap.svelte-zxu34v {
   color: var(--ink-soft);
 }
 
+/* the row a [n] marker points at flashes once when targeted */
+#evidence .chunk:target {
+  background: var(--phos-ghost);
+  border-top-color: var(--brown);
+}
+
+/* citation markers inside the ruling — amber mono chips that jump to
+   their evidence row */
+#answer-wrap a.cite {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  color: var(--brown);
+  text-decoration: none;
+  border: 1px solid rgba(107, 74, 43, 0.45);
+  border-radius: 3px;
+  padding: 0 3px;
+  margin: 0 2px;
+  vertical-align: super;
+  line-height: 1;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+#answer-wrap a.cite:hover {
+  background: var(--phos-ghost);
+  color: var(--ink);
+}
+
 /* ------------------------------------------------------------------ */
 /* 6 — colophon                                                          */
 /* ------------------------------------------------------------------ */
@@ -878,13 +1004,19 @@ footer.wrap.svelte-zxu34v {
   #crt-topbar .status { display: none; }
   #crt-topbar .brand { font-size: 12px; letter-spacing: 0.2em; }
 
-  #chrono { min-height: 54vh; }
-  .crt-overlay, .sweep { inset: 0 0 300px 0; }
+  #chrono { min-height: 58vh; --console-lap: 0px; }
+  .crt-overlay, .sweep { inset: 0; }
 
-  /* the console strip grows taller on narrow glass — the negative-margin
-     pull-up is calibrated to the desktop strip; on mobile let it stack
-     naturally instead of fighting the fold */
+  /* the compact portrait chronoscope: every branch and label in frame
+     on narrow glass — the full scene sliced 5 of 8 branches away */
+  #chrono-desktop { display: none !important; }
+  #chrono-mobile { display: flex !important; }
+  .chronoscope { min-height: 280px; }
+
+  /* the console strip stacks naturally below the tube — no pull-up lap */
   #searchzone { margin-top: 0; padding: 24px 20px 26px; }
+
+  .console-readouts { gap: 4px 18px; font-size: 9px; margin-bottom: 16px; }
 
   .brandblock {
     left: 24px;
@@ -895,12 +1027,16 @@ footer.wrap.svelte-zxu34v {
   .brandblock h1 { font-size: clamp(40px, 11vw, 56px); }
   .brandblock .lede { font-size: 13.5px; }
 
-  /* the chronoscope crops on narrow glass — branches stay tappable where
-     visible, but the hint must not promise what's off-screen; the scope
-     dropdown is the full mechanism on mobile */
-  .hero-hint { display: none; }
+  /* the compact scene keeps every branch in frame — the hint may speak */
+  .hero-hint { font-size: 9px; letter-spacing: 0.16em; }
 
-  #searchzone .query-box textarea { padding: 16px 120px 16px 44px !important; font-size: 14px !important; height: 56px; }
+  #searchzone .query-box textarea {
+    padding: 16px 120px 0 44px !important;
+    font-size: 14px !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    max-height: 56px !important;
+  }
   #searchzone button.primary, #searchbtn { font-size: 12px; padding: 10px 14px !important; }
 
   #timeline-filter { width: 100%; max-width: 340px; }

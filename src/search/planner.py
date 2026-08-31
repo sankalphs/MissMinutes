@@ -3,12 +3,15 @@
 The LLM produces the PLAN, never the answer. Simple entity-only queries
 skip the LLM entirely (spec:31).
 """
+import logging
 import re
 from typing import Literal
 
 from pydantic import BaseModel, Field, ValidationError
 
 from src.llm.client import GMIClient
+
+logger = logging.getLogger(__name__)
 
 PLAN_SYSTEM = """You convert user questions about Marvel screen canon into a JSON search plan.
 Output ONLY JSON:
@@ -47,13 +50,26 @@ class QueryPlan(BaseModel):
     temporal_constraint: str | None = None
 
 
-SIMPLE_NAME = re.compile(r"^[A-Z][A-Za-z0-9 .'\-]{1,40}$")
+# Bare names only, 1-4 capitalized words ("Loki", "The Avengers"). A
+# question shape ("Who is Loki", "What is the TVA") must never match —
+# it previously captured the whole sentence as an entity.
+SIMPLE_NAME = re.compile(r"^(?:the\s+)?[A-Z][a-zA-Z'.-]*(?:\s+[A-Z][a-zA-Z'.-]*){0,3}$")
+
+
+def _is_simple_name(q: str) -> bool:
+    if not SIMPLE_NAME.match(q):
+        return False
+    if q.strip().endswith(("?", ".", "!", ",")):
+        return False
+    # every word must start a capital run (no lowercase sentence starts)
+    return all(w[0].isupper() for w in q.split() if w)
 
 
 def parse_query(llm: GMIClient, query: str) -> QueryPlan:
     # spec:31 — simple single-name queries skip the LLM
-    if SIMPLE_NAME.match(query.strip()) and len(query.strip().split()) <= 4:
-        return QueryPlan(entities=[query.strip()], intent="entity_lookup", operation="find_entity")
+    q = query.strip()
+    if _is_simple_name(q):
+        return QueryPlan(entities=[q], intent="entity_lookup", operation="find_entity")
     try:
         raw = llm.chat_json(
             [
@@ -64,5 +80,8 @@ def parse_query(llm: GMIClient, query: str) -> QueryPlan:
             max_tokens=300,
         )
         return QueryPlan(**raw)
-    except (ValidationError, Exception):
+    except Exception as e:
+        # degraded plan: semantic-only, no entities. Logged — silent
+        # degradation is a lie the status line would repeat.
+        logger.warning("query planning degraded to free_search: %s", e)
         return QueryPlan(entities=[], intent="semantic", operation="free_search")

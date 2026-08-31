@@ -20,8 +20,8 @@ import gradio as gr
 
 from src.search.hybrid import hybrid_search
 from src.search.planner import parse_query
-from src.search.synthesis import generate_answer
-from src.ui.chronoscope import chronoscope_svg, TIMELINES
+from src.search.synthesis import EVIDENCE_LIMIT, generate_answer
+from src.ui.chronoscope import TIMELINES, chronoscope_svg
 from src.ui.clients import get_graph, get_llm, get_store, get_vector
 
 logging.basicConfig(level=logging.INFO)
@@ -55,26 +55,52 @@ CSS = (UI_DIR / "app.css").read_text(encoding="utf-8")
 
 # Inline bridge script — gradio 6's mount(js=…) never executes, so the
 # chronoscope interactivity ships inside the hero HTML itself: one place
-# for every bridge (branch click -> scope, evidence hover -> highlight).
+# for every bridge (branch click <-> scope, evidence hover -> highlight,
+# pending mirror, citation markers -> evidence rows).
 HERO_JS = """
 <script>
 (function () {
   if (window.__mmBridge) return; window.__mmBridge = true;
   var selected = null;
-  document.addEventListener('click', function (e) {
-    var t = e.target, g = null;
-    while (t && t !== document) {
-      if (t.classList && t.classList.contains('branch-g')) { g = t; break; }
-      t = t.parentNode;
-    }
-    if (!g || !g.closest('#chronoscope')) return;
-    if (g.dataset.pruned === '1') return;   // pruned lines hold no files
-    selected = (selected === g.dataset.key) ? null : g.dataset.key;
-    document.querySelectorAll('#chronoscope .branch-g').forEach(function (el) {
-      el.classList.toggle('selected', el.dataset.key === selected);
-    });
+  var PRUNED_NOTE = {
+    'fox:ff': 'FOX FANTASTIC FOUR — PRUNED (NO FILES ON THIS BRANCH)',
+    'sony:spiderverse': 'SPIDER-VERSE — PRUNED (NO FILES ON THIS BRANCH)'
+  };
+  var LABELS = {
+    'mcu': 'MCU / SACRED TIMELINE', 'fox:xmen': 'FOX X-MEN',
+    'sony:rami': "TOBEY MAGUIRE'S SPIDER-MAN", 'sony:webb': 'THE AMAZING SPIDER-MAN',
+    'sony:ssu': 'VENOM · MORBIUS · KRAVEN · SPIDER-VERSE', 'defenders': 'THE DEFENDERS',
+    'whatif': 'WHAT IF...?', 'fox:ff': 'FOX FANTASTIC FOUR',
+    'sony:spiderverse': 'SPIDER-VERSE (ANIMATED)'
+  };
+
+  function setNote(txt) {
     var note = document.getElementById('selection-note');
-    if (note) note.textContent = selected ? 'SCOPE LOCKED — ' + g.dataset.label.toUpperCase() : '';
+    if (note) note.textContent = txt;
+  }
+
+  function applySelection(key) {
+    selected = key;
+    document.querySelectorAll('.chronoscope .branch-g').forEach(function (el) {
+      el.classList.toggle('selected', el.dataset.key === selected);
+      el.setAttribute('aria-pressed', el.dataset.key === selected ? 'true' : 'false');
+    });
+    if (selected) {
+      var el = document.querySelector('.chronoscope .branch-g[data-key="' + selected + '"]');
+      setNote('SCOPE LOCKED — ' + ((el && el.dataset.label) || (LABELS[selected] || selected)).toUpperCase());
+    } else {
+      setNote('');
+    }
+  }
+
+  // --- branch click / keyboard -> scope ---------------------------------
+  function branchPick(g) {
+    if (!g || !g.closest('.chronoscope')) return;
+    if (g.dataset.pruned === '1') {
+      setNote(PRUNED_NOTE[g.dataset.key] || (g.dataset.label + ' — PRUNED (NO FILES ON THIS BRANCH)'));
+      return;
+    }
+    applySelection(selected === g.dataset.key ? null : g.dataset.key);
     var box = document.querySelector('#scope-tb textarea') || document.querySelector('#scope-tb input');
     if (box) {
       var proto = box.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
@@ -82,28 +108,104 @@ HERO_JS = """
       setter.call(box, selected || '');
       box.dispatchEvent(new Event('input', { bubbles: true }));
     }
+  }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target, g = null;
+    while (t && t !== document) {
+      if (t.classList && t.classList.contains('branch-g')) { g = t; break; }
+      t = t.parentNode;
+    }
+    branchPick(g);
   });
+
+  // --- debounce: a second FILE REQUEST while one is in flight joins a
+  // 40s queue behind itself — swallow it at capture phase instead.
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('#searchbtn') : null;
+    if (b && document.querySelector('.pending')) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var t = e.target;
+    if (t.classList && t.classList.contains('branch-g') && t.closest('.chronoscope')) {
+      e.preventDefault();
+      branchPick(t);
+    }
+  });
+
+  // --- dropdown -> chronoscope (the reverse bridge) ----------------------
+  // the python change handler re-emits the bridge block with the chosen
+  // label inside #scope-echo. gradio REPLACES that subtree on every update
+  // (killing any observer attached to it), so watch a stable ancestor and
+  // look the node up on every mutation. Every path converges here — branch
+  // clicks and dropdown picks alike — so the note can never desync: the
+  // echo is the single source of truth the scene renders from.
+  var echoHost = document.body;  // stable; #searchzone sits inside
+  if (window.MutationObserver && echoHost) {
+    var lastEcho = null;
+    new MutationObserver(function () {
+      var echo = document.getElementById('scope-echo');
+      if (!echo) return;
+      var v = (echo.textContent || '').trim();
+      if (v === lastEcho) return;
+      lastEcho = v;
+      var key = null;
+      if (v && v !== 'ALL TIMELINES') {
+        for (var k in LABELS) {
+          if (LABELS[k].toUpperCase() === v) { key = k; break; }
+        }
+      }
+      applySelection(key);
+    }).observe(echoHost, { childList: true, subtree: true, characterData: true });
+  }
+
+  // --- evidence hover -> branch highlight --------------------------------
   document.addEventListener('mouseover', function (e) {
     var chunk = e.target.closest ? e.target.closest('#evidence .chunk[data-timeline]') : null;
     if (!chunk) return;
-    var g = document.querySelector('#chronoscope .branch-g[data-key="' + chunk.dataset.timeline + '"]');
+    var g = document.querySelector('.chronoscope .branch-g[data-key="' + chunk.dataset.timeline + '"]');
     if (g) g.classList.add('hover');
   });
   document.addEventListener('mouseout', function (e) {
     var chunk = e.target.closest ? e.target.closest('#evidence .chunk[data-timeline]') : null;
     if (!chunk) return;
-    var g = document.querySelector('#chronoscope .branch-g[data-key="' + chunk.dataset.timeline + '"]');
+    var g = document.querySelector('.chronoscope .branch-g[data-key="' + chunk.dataset.timeline + '"]');
     if (g) g.classList.remove('hover');
   });
-  // gradio's .pending class marks a request in flight; mirror it on #chrono
-  // so the console sweep can retrace (body-level classes are unreachable
-  // behind gradio's selector re-scoping)
+
+  // --- pending mirror: in-flight status note + sweep + a11y fixups ----------
   if (window.MutationObserver) {
     var sync = function () {
+      var pending = !!document.querySelector('.pending');
       var chrono = document.getElementById('chrono');
-      if (chrono) chrono.classList.toggle('processing', !!document.querySelector('.pending'));
+      if (chrono) chrono.classList.toggle('processing', pending);
+      var flight = document.getElementById('flight-note');
+      if (flight) {
+        flight.textContent = pending ? 'REVIEWING FILE — THE ARCHIVIST IS CONSULTING THE RECORD…' : '';
+      }
+      // a11y fixups (gradio re-renders controls; re-apply idempotently)
+      var qb = document.querySelector('.query-box textarea');
+      if (qb && !qb.getAttribute('aria-label')) {
+        qb.setAttribute('aria-label', 'Ask the archive — type your question about Marvel screen canon');
+      }
+      var db = document.querySelector('#timeline-filter input');
+      if (db && !db.getAttribute('aria-label')) {
+        db.setAttribute('aria-label', 'Timeline scope — filter the search to one branch of the multiverse');
+      }
+      var stb = document.querySelector('#scope-tb textarea') || document.querySelector('#scope-tb input');
+      if (stb) { stb.tabIndex = -1; stb.setAttribute('aria-hidden', 'true'); }
+      // hidden gradio chrome (0x0 but focusable) must leave the tab order
+      document.querySelectorAll('footer a, footer button, gradio-footer a, gradio-footer button').forEach(function (el) {
+        el.tabIndex = -1;
+      });
     };
     new MutationObserver(sync).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+    sync();
   }
 })();
 </script>
@@ -116,33 +218,8 @@ LABEL_TO_KEY["All timelines"] = None
 PRUNED_LABELS = {t["label"] for t in TIMELINES if t.get("pruned")}
 DROPDOWN_TIMELINES = ["All timelines"] + [t["label"] for t in TIMELINES if not t.get("pruned")]
 
-# evidence title -> timeline key, longest match wins; unmatched = MCU spine.
-# The corpus taxonomy: spiderverse films are filed under sony:ssu.
-BRANCH_KEYS = {
-    "what if": "whatif", "what if...?": "whatif", "marvel zombies": "whatif",
-    "x-men": "fox:xmen", "x2 ": "fox:xmen", "x2:": "fox:xmen",
-    "deadpool": "fox:xmen", "logan": "fox:xmen", "wolverine": "fox:xmen",
-    "new mutants": "fox:xmen", "dark phoenix": "fox:xmen",
-    "spider-man": "sony:rami", "spider-man 2": "sony:rami", "spider-man 3": "sony:rami",
-    "amazing spider-man": "sony:webb",
-    "venom": "sony:ssu", "morbius": "sony:ssu", "kraven": "sony:ssu",
-    "madame web": "sony:ssu", "spider-verse": "sony:ssu",
-    "daredevil": "defenders", "jessica jones": "defenders", "luke cage": "defenders",
-    "iron fist": "defenders", "punisher": "defenders", "defenders": "defenders",
-}
-
 # timeline key -> in-universe branch name for the evidence badges
 KEY_TO_BRANCH = {t["key"]: t["branch"] for t in TIMELINES}
-
-
-def _branch_key(title: str) -> str:
-    t = (title or "").lower()
-    best, best_len = "", 0
-    for frag, key in BRANCH_KEYS.items():
-        if frag in t and len(frag) > best_len:
-            best, best_len = key, len(frag)
-    return best or "mcu"
-
 
 # --- TVA copy ---------------------------------------------------------------
 
@@ -153,6 +230,23 @@ INTAKE_HEADING = """<div class="intake-heading">
   your pencils &mdash; and check this out: everything below is on the record.</p>
 </div>"""
 
+# Machine readouts — drawn on the console strip's own glass, where they are
+# always visible. The SVG floor they used to occupy sat behind the strip's
+# lap on every desktop size (C1: drawn and never seen).
+CONSOLE_READOUTS_HTML = (
+    "<div class='console-readouts' aria-hidden='true'>"
+    + "".join(
+        f"<span class='ro'><span class='ro-k'>{k}</span> <span class='ro-v'>{v}</span></span>"
+        for k, v in (
+            ("CHRONO BAY 3", "BRANCH SCAN ACTIVE"),
+            ("REDLINE", "0.0031 DEVIATION"),
+            ("HUNTERS", "STANDBY"),
+            ("ANALYSTS", "ON DUTY"),
+        )
+    )
+    + "</div>"
+)
+
 EXAMPLES = [
     "What happened after Loki escaped with the Tesseract?",
     "How are the Fox X-Men connected to the multiverse?",
@@ -161,12 +255,38 @@ EXAMPLES = [
 
 EXAMPLES_HEADING = "<div class='ex-label'>Recent sequence violations under review</div>"
 
-STATUS_TEMPLATES = {
-    "ok": "FILE PROCESSED — GRAPH · VECTOR · LEXICAL",
-    "graph_down": "FILE PROCESSED (DEGRADED) — VECTOR · LEXICAL ONLY, GRAPH UNREACHABLE",
-    "vector_down": "FILE PROCESSED (DEGRADED) — GRAPH · LEXICAL ONLY, VECTOR UNREACHABLE",
-    "both_down": "FILE PROCESSED (MINIMAL) — LEXICAL ONLY",
-}
+# mono degradation tiers (DESIGN.md status vocabulary). Every leg reports
+# ok / empty / down — "empty" is a healthy branch with no files for this
+# query, "down" is a backend the pipeline could not reach. The legs named
+# are the legs that actually served evidence for this ruling.
+_LEG_OK, _LEG_EMPTY, _LEG_DOWN = "ok", "empty", "down"
+
+
+def _status_html(legs: dict, used: list[str], latency: float) -> str:
+    """One word per leg, always in the same order. A leg is named plain
+    when the ruling's citations include evidence it served; a healthy leg
+    with nothing for this ruling reads (NO FILES); an unreachable backend
+    reads UNREACHABLE — never conflated."""
+    order = (("graph", "GRAPH"), ("vector", "VECTOR"), ("lexical", "LEXICAL"))
+    parts = []
+    for leg, name in order:
+        state = legs.get(leg)
+        if state == _LEG_DOWN:
+            parts.append(name + " UNREACHABLE")
+        elif leg in used:
+            parts.append(name)
+        else:
+            parts.append(name + " (NO FILES)")
+    down = [legs.get(l) == _LEG_DOWN for l, _ in order]
+    prefix = "FILE PROCESSED (DEGRADED)" if any(down) else "FILE PROCESSED"
+    if all(down):
+        line = "NO BACKENDS REACHABLE — THE ARCHIVE IS DARK"
+    elif not used:
+        tail = " · ".join(p for p in parts if "UNREACHABLE" in p)
+        line = prefix + " — NO EVIDENCE ON THIS BRANCH" + ((" · " + tail) if tail else "")
+    else:
+        line = prefix + " — " + " · ".join(parts)
+    return f"<div id='pipeline-status'>{line} · {latency:.1f}s</div>"
 
 
 def scope_from_scene(key: str):
@@ -176,18 +296,28 @@ def scope_from_scene(key: str):
 
 
 def _ev_row(i: int, c: dict) -> str:
+    """One evidence row. The branch badge is the chunk's real timeline_id
+    (from the store payload), never guessed from the title. Graph rows
+    carry no timeline — they badge KNOWLEDGE GRAPH and light no branch."""
     title = html.escape(c.get("title", "?"))
-    text = html.escape(c.get("text", "")[:220])
-    key = _branch_key(c.get("title", ""))
-    branch = KEY_TO_BRANCH.get(key, key)
+    text_full = c.get("text", "")
+    text = text_full[:220]
+    tl = (c.get("timeline_id") or "").strip()
+    if tl:
+        branch = KEY_TO_BRANCH.get(tl, tl.upper())
+        tl_attr = f" data-timeline='{html.escape(tl)}'"
+    else:
+        branch = "KNOWLEDGE GRAPH"
+        tl_attr = ""
     meta = html.escape(c.get("chunk_id", ""))
+    quote = html.escape(text) + ("&hellip;" if len(text_full) > 220 else "")
     return (
-        f"<div class='chunk' data-timeline='{key}'>"
+        f"<div class='chunk' id='ev-{i:02d}'{tl_attr}>"
         f"<span class='num'>{i:02d}</span>"
         f"<span class='ev-body'><b>{title}</b>"
         f"<span class='branch-branch'>{branch}</span>"
         f"<span class='meta'>FILE {meta}</span>"
-        f"<span class='quote'>{text}&hellip;</span></span></div>"
+        f"<span class='quote'>{quote}</span></span></div>"
     )
 
 
@@ -208,22 +338,43 @@ def _empty_evidence() -> str:
     )
 
 
-def _status_html(legs: dict, latency: float) -> str:
-    g, v = legs.get("graph"), legs.get("vector")
-    if g and v:
-        code = "ok"
-    elif not g and not v:
-        code = "both_down"
-    elif not g:
-        code = "graph_down"
-    else:
-        code = "vector_down"
-    return f"<div id='pipeline-status'>{STATUS_TEMPLATES[code]} · {latency:.1f}s</div>"
+def _flight_note() -> str:
+    return "<div id='flight-note' aria-live='polite'></div>"
+
+
+_CITE_RE = None
+
+
+def _answer_html(answer: str) -> str:
+    """Ruling text with [n] markers rendered as amber superscript links that
+    scroll to the matching evidence row — the citation affordance, live."""
+    global _CITE_RE
+    if _CITE_RE is None:
+        import re
+        _CITE_RE = re.compile(r"\[(\d+)\]")
+
+    def _sub(m):
+        n = m.group(1)
+        if n.isdigit() and 1 <= int(n) <= EVIDENCE_LIMIT:
+            return (f"<a class='cite' href='#ev-{int(n):02d}' "
+                    f"aria-label='Citation {n} — jump to evidence row {n}'>[{n}]</a>")
+        return f"[{n}]"
+
+    parts = []
+    for para in answer.split("\n"):
+        if not para.strip():
+            continue
+        escaped = html.escape(para.strip())
+        parts.append(_CITE_RE.sub(_sub, escaped))
+    return "<br/>".join(parts)
+
 
 def search_and_answer(question: str, timeline: str):
     """Orchestrated pipeline: plan -> hybrid retrieval -> grounded synthesis."""
     if not question.strip():
-        return _empty_answer(), _empty_evidence(), ""
+        # no-op on empty submit: the desk stays as it was
+        return gr.update(), gr.update(), gr.update()
+
     t0 = time.perf_counter()
     try:
         store = get_store()
@@ -238,7 +389,8 @@ def search_and_answer(question: str, timeline: str):
         result = generate_answer(llm, question, ranked)
 
         citations = result.get("citations", [])
-        ev_rows = [_ev_row(i, c) for i, c in enumerate(citations[:6], 1)]
+        used = _used_legs(ranked, result.get("answer", ""))
+        ev_rows = [_ev_row(i, c) for i, c in enumerate(citations, 1)]
         evidence = (
             "<div id='evidence'><p class='ev-heading'>Evidence from the timeline</p>"
             + "".join(ev_rows) + "</div>"
@@ -247,13 +399,10 @@ def search_and_answer(question: str, timeline: str):
                  "<p class='ev-sub'>No subtitle passages were retrievable for this query.</p></div>"
         )
 
-        answer_html = "<br/>".join(
-            html.escape(p) for p in result["answer"].split("\n") if p.strip()
-        )
         out = (
             "<div id='answer-wrap'>"
             "<p class='stamp'>RULING ISSUED</p>"
-            f"<p>{answer_html}</p>"
+            f"<p class='ruling'>{_answer_html(result['answer'])}</p>"
         )
         if result.get("uncertainty") and result["uncertainty"] != "none":
             out += (
@@ -272,17 +421,60 @@ def search_and_answer(question: str, timeline: str):
             )
         out += "</div>"
 
-        status = _status_html(ranked.get("legs", {}), time.perf_counter() - t0)
+        status = _status_html(ranked.get("legs", {}), used, time.perf_counter() - t0)
         return out, evidence, status
-    except Exception as e:
+    except Exception:
         logger.exception("pipeline error")
+        status = (
+            "<div id='pipeline-status'>FILE REJECTED — THE ARCHIVE IS MOMENTARILY "
+            "UNREACHABLE. TRY REPHRASING OR RE-FILE IN A MOMENT.</div>"
+        )
         return (
             "<div id='answer-wrap'><p class='stamp'>REQUEST REJECTED</p>"
-            "<p>The archivist hit a snag: "
-            f"{type(e).__name__}. Try rephrasing the question.</p></div>",
-            "",
-            "",
+            "<p>The archivist could not reach the records. Try rephrasing the "
+            "question, or file the request again in a moment.</p></div>",
+            "<div id='evidence'><p class='ev-heading'>Evidence from the timeline</p>"
+            "<p class='ev-sub'>No passages accompany a rejected request.</p></div>",
+            status,
         )
+
+
+def _used_legs(ranked: dict, answer: str) -> list[str]:
+    """Legs that actually served rows the answer cites (or the top evidence).
+
+    A graph hit only counts when the answer's citations include a graph row;
+    otherwise GRAPH shows as serving when every cited chunk came from FTS5
+    or Qdrant."""
+    import re
+
+    cited = {int(c) for c in re.findall(r"\[(\d+)\]", answer)}
+    results = ranked.get("results", [])
+    used: list[str] = []
+
+    def _leg_of(r: dict) -> str:
+        if r["type"] == "chunk":
+            src = r["data"].get("source")
+            if src == "fts":
+                return "lexical"
+            if src == "fts+vector":
+                return "vector+lexical"
+            return "vector"
+        return "graph"
+
+    def _add(leg: str) -> None:
+        for part in leg.split("+"):
+            if part not in used:
+                used.append(part)
+
+    for i, r in enumerate(results[:EVIDENCE_LIMIT], 1):
+        if cited and i not in cited:
+            continue
+        _add(_leg_of(r))
+    if not used:
+        # answer cites nothing: name every leg that served rows at all
+        for r in results[:EVIDENCE_LIMIT]:
+            _add(_leg_of(r))
+    return used
 
 
 def run_example(question: str, timeline: str):
@@ -290,9 +482,24 @@ def run_example(question: str, timeline: str):
     return question, *search_and_answer(question, timeline)
 
 
+def echo_scope(timeline: str):
+    """Dropdown change -> re-emit the bridge HTML with the new scope echoed.
+
+    The selection-note and scope-echo divs live inside one gr.HTML so the
+    JS observer sees the echo; the flight-note div is recreated too.
+    Returns the full block so the echoed label lands in #scope-echo."""
+    label = (timeline or "ALL TIMELINES").upper()
+    return (
+        f"<div id='selection-note' aria-live='polite'></div>"
+        f"<div id='scope-echo' style='display:none'>{html.escape(label)}</div>"
+        f"{_flight_note()}"
+    )
+
+
 def build_app() -> gr.Blocks:
     with gr.Blocks(title="MissMinutes — TVA field terminal") as app:
         gr.HTML(f"""
+        <a id="skip-link" href="#searchzone">Skip to the request line</a>
         <div id="crt-topbar">
           <span class="brand">
             <svg class="tva-mark" viewBox="0 0 24 24" aria-hidden="true">
@@ -304,8 +511,9 @@ def build_app() -> gr.Blocks:
           </span>
           <span class="status"><span class="dot"></span>SACRED TIMELINE · STABLE</span>
         </div>
-        <div id="chrono" aria-label="Chrono-monitor: the Sacred Timeline with branch timelines diverging">
-          {chronoscope_svg()}
+        <div id="chrono" aria-label="Chrono-monitor: the Sacred Timeline with branch timelines">
+          <div id="chrono-desktop">{chronoscope_svg(compact=False)}</div>
+          <div id="chrono-mobile">{chronoscope_svg(compact=True)}</div>
           <div class="crt-overlay" aria-hidden="true"></div>
           <div class="sweep" aria-hidden="true"></div>
           <div class="brandblock">
@@ -318,10 +526,11 @@ def build_app() -> gr.Blocks:
         """)
 
         with gr.Column(elem_id="searchzone"):
+            gr.HTML(CONSOLE_READOUTS_HTML)
             with gr.Row(elem_id="searchrow"):
                 q = gr.Textbox(
                     placeholder="TYPE QUERY — the archive is listening",
-                    label="",
+                    label="Ask the archive",
                     show_label=False,
                     elem_classes="query-box",
                     lines=1,
@@ -331,14 +540,19 @@ def build_app() -> gr.Blocks:
             tl = gr.Dropdown(
                 choices=DROPDOWN_TIMELINES,
                 value="All timelines",
-                label="",
+                label="Timeline scope",
                 show_label=False,
                 elem_id="timeline-filter",
             )
             # gradio 6 drops visible=False components from the DOM entirely;
             # render it and let #scope-tb CSS collapse it to nothing instead
-            scope_tb = gr.Textbox(value="", elem_id="scope-tb", show_label=False, container=False)
-            gr.HTML("<div id='selection-note'></div>")
+            scope_tb = gr.Textbox(value="", elem_id="scope-tb", show_label=False,
+                                  container=False)
+            scope_note = gr.HTML(
+                f"<div id='selection-note' aria-live='polite'></div>"
+                f"<div id='scope-echo' style='display:none'></div>"
+                f"{_flight_note()}"
+            )
 
         with gr.Column(elem_id="examples"):
             gr.HTML(EXAMPLES_HEADING)
@@ -347,9 +561,9 @@ def build_app() -> gr.Blocks:
                 ex_buttons.append(gr.Button(ex, variant="secondary"))
 
         gr.HTML("<div id='read'><div class='divider'></div></div>")
-        out = gr.HTML(_empty_answer())
-        ev = gr.HTML(_empty_evidence())
-        status = gr.HTML("<div id='pipeline-status'></div>", elem_id="status-shell")
+        out = gr.HTML(_empty_answer(), elem_id="answer-shell")
+        ev = gr.HTML(_empty_evidence(), elem_id="evidence-shell")
+        status = gr.HTML("<div id='pipeline-status' aria-live='polite'></div>", elem_id="status-shell")
 
         gr.HTML(
             "<div id='colophon'>MISSMINUTES &mdash; knowledge graph: <b>neo4j aura</b> "
@@ -361,6 +575,7 @@ def build_app() -> gr.Blocks:
         btn.click(search_and_answer, inputs=[q, tl], outputs=[out, ev, status])
         q.submit(search_and_answer, inputs=[q, tl], outputs=[out, ev, status])
         scope_tb.change(scope_from_scene, inputs=[scope_tb], outputs=[tl])
+        tl.change(echo_scope, inputs=[tl], outputs=[scope_note])
         for exb, ex_text in zip(ex_buttons, EXAMPLES):
             exb.click(
                 run_example,
@@ -371,10 +586,15 @@ def build_app() -> gr.Blocks:
 
 
 if __name__ == "__main__":
+    import os
     import uvicorn
 
     from src.ui.scene_server import scene_app
     blocks = build_app()
-    blocks.queue()
+    blocks.queue(default_concurrency_limit=1)
     gr.mount_gradio_app(scene_app, blocks, path="/", css=CSS, head=HERO_JS)
-    uvicorn.run(scene_app, host="0.0.0.0", port=7860)
+    uvicorn.run(
+        scene_app,
+        host=os.getenv("MM_HOST", "127.0.0.1"),
+        port=int(os.getenv("MM_PORT", "7860")),
+    )

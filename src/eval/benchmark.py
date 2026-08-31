@@ -124,8 +124,17 @@ def run_benchmark(limit: int | None = None) -> dict:
         dt = time.time() - t0
 
         evidence = answer.get("citations", [])
-        ev_texts = " ".join(e.get("text", "") for e in evidence).lower()
-        ev_titles = " ".join(e.get("title", "") for e in evidence).lower()
+        # per-citation: evidence rows the answer actually cites, not the
+        # whole retrieval pool (the old all-evidence substring check
+        # passed on answers that never touched the expected document)
+        cited_idx = [
+            int(m) for m in _re.findall(r"\[(\d+)\]", answer["answer"])
+            if m.isdigit() and 1 <= int(m) <= len(evidence)
+        ]
+        cited_ev = [evidence[i - 1] for i in cited_idx]
+        pool = cited_ev if cited_ev else evidence
+        ev_texts = " ".join(e.get("text", "") for e in pool).lower()
+        ev_titles = " ".join(e.get("title", "") for e in pool).lower()
         # title from doc store: query DB for the expected slug's real title
         from src.ingestion.store import Store as _Store
 
@@ -152,8 +161,14 @@ def run_benchmark(limit: int | None = None) -> dict:
         graph_names = " ".join(
             r["data"].get("name", "") for r in ranked["results"] if r["type"] == "entity"
         ).lower()
+
+        def entity_match(exp: str) -> bool:
+            # word-boundary match so 'Loki' never passes on 'Lokisson'
+            pat = _re.compile(r"\b" + _re.escape(exp.lower()) + r"\b")
+            return bool(pat.search(planner_entities) or pat.search(graph_names))
+
         entity = all(
-            exp.lower() in (planner_entities + " " + graph_names)
+            entity_match(exp)
             for exp in case.get("expect_entities", [])
         ) if case.get("expect_entities") else True
 
@@ -175,7 +190,8 @@ def run_benchmark(limit: int | None = None) -> dict:
             }.get(expect_tl, [expect_tl])
             timeline = any(n in combined for n in tl_names)
 
-        citation = ("[" in answer["answer"]) if case.get("expect_citation") else True
+        # citation = a valid in-range [n] marker, not any stray bracket
+        citation = bool(cited_idx) if case.get("expect_citation") else True
         faithful = _faithful(answer["answer"], evidence) if evidence else False
 
         results.append(QResult(case["q"], retrieval, entity, timeline, citation, faithful, round(dt, 2)))

@@ -70,7 +70,13 @@ time; ingestion is a separate offline pipeline.
 - `data/processed/qdrant/` — local vector store, 83,628 points.
 - Neo4j Aura — 50.6k nodes / 167k relationships.
 - `data/canon/inventory.json` — verified canon inventory with IMDB IDs.
-- `data/processed/benchmark_report.json` — 9/9 benchmark questions passing.
+- `data/processed/benchmark_report.json` — benchmark under the tightened
+  gates (2026-09): entity 9/9→8/9 under word-boundary matching, timeline
+  9/9, citation 9/9 (valid in-range markers only), retrieval 8/9 (cited
+  evidence only, not the retrieval pool), faithfulness graded per-sentence
+  against the passages each sentence cites. The earlier "9/9" claim was
+  graded by lenient gates (any "[" counted as a citation; whole-pool
+  substring doc match) — treat it as superseded.
 - Miss Minutes verbatim quotes and TVA visual references gathered in the
   2026-08 redesign research pass (Loki S1E1 training video, Polygon/Farahani
   production-design interview, MCU Fandom wiki).

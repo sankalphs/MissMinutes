@@ -6,6 +6,7 @@ Chunk payloads carry full provenance (document_id, timeline_id, title,
 cue range) so vector hits map straight to citable evidence (spec:14,20).
 """
 import logging
+import threading
 from typing import Any
 
 from src.config import settings
@@ -87,15 +88,18 @@ class VectorStore:
 
 
 _MODEL = None
+_MODEL_LOCK = threading.Lock()
 
 
 def _model():
-    """Load the embedding model once per process."""
+    """Load the embedding model once per process (race-safe)."""
     global _MODEL
     if _MODEL is None:
-        from sentence_transformers import SentenceTransformer
+        with _MODEL_LOCK:
+            if _MODEL is None:
+                from sentence_transformers import SentenceTransformer
 
-        _MODEL = SentenceTransformer(settings.EMBEDDING_MODEL)
+                _MODEL = SentenceTransformer(settings.EMBEDDING_MODEL)
     return _MODEL
 
 

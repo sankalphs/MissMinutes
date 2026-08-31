@@ -60,7 +60,12 @@ class GMIClient:
                     raise GMIError(f"HTTP 402 (model not on plan): {resp.text[:200]}")
                 if resp.status_code == 429:
                     retry_after = resp.headers.get("Retry-After")
-                    wait = int(retry_after) if retry_after and retry_after.isdigit() else 2 * (attempt + 1)
+                    # cap the wait — a server "Retry-After: 3600" must never
+                    # park a worker thread for an hour
+                    wait = min(
+                        int(retry_after) if retry_after and retry_after.isdigit() else 2 * (attempt + 1),
+                        30,
+                    )
                     logger.info("429 rate limit — sleeping %ss (attempt %d)", wait, attempt)
                     time.sleep(wait)
                     last_err = GMIError(f"HTTP 429: {resp.text[:200]}")
@@ -111,7 +116,8 @@ class GMIClient:
                     {"role": "user", "content": text},
                 ],
                 temperature=0.0,
-                max_tokens=max_tokens,
+                # repair re-emits the original payload, not a full answer
+                max_tokens=min(max_tokens, 600),
             )
             rtext = repaired.strip()
             if rtext.startswith("```"):

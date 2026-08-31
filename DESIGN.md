@@ -237,17 +237,17 @@ A single vertical instrument: full-bleed hero and console strip, then a 760px pa
 
 | Zone | Measurement | Notes |
 |---|---|---|
-| **CRT topbar** | absolute, full width, padding 20px 34px, z-20 | Brand left: 20px diamond SVG (outlined diamond + solid inner) + "TIME VARIANCE AUTHORITY" in Oswald 600 13.5px / 0.3em, amber with glow. Status right: mono 10.5px / 0.16em "SACRED TIMELINE · STABLE" + 6px blinking amber dot. `pointer-events: none`. |
-| **The tube** (`#chrono`) | min-height 74vh desktop / 54vh ≤768px, full width | Background: walnut radial glow (at 50% 105%) over glass→glass-2 vertical gradient. Contains: the SVG chronoscope (flex-grow, min 320px), `.crt-overlay` and `.sweep` (inset 0 0 288px — CRT effects stop where the console strip overlaps; 300px on mobile), bezel ring via `::before`, brand block upper-left (left clamp(26px,5vw,76px), top clamp(76px,14vh,150px)), hero hint upper-right (mono 10px / 0.22em). Z-stack: SVG base → overlay (5) → sweep + bezel (6) → brandblock (10) → topbar (20). |
-| **Console strip** (`#searchzone`) | full width, `margin-top: -224px` (pulls up over the tube's bottom band), padding 26px clamp(24px,6vw,96px) 30px, z-8 | Dark glass gradient (rgba(15,13,26,0.98) → glass-2), 1.5px amber 0.25 border-top, upward shadow 0 -18px 60px. Children centered: input row (max 760px), Miss Minutes greeting (max 56ch), scope dropdown (340px), selection-note. |
-| **Paper zone** | 760px column on Desk Ground | Docket examples (60px top margin) → `#read` divider (80px top; 1.5px × 44px vertical hairline, centered) → ruling card (padding 34px 38px 30px) → evidence annex (56px top; rows on a 48px-numeral + 1fr grid, 18px column gap) → pipeline status (14px top) → colophon (100px top, 60px bottom padding). |
+| **CRT topbar** | absolute, full width, padding 20px 34px, z-20 | Brand left: 20px diamond SVG (outlined diamond + solid inner) + "TIME VARIANCE AUTHORITY" in Oswald 600 13.5px / 0.3em, amber with glow. Status right: mono 10.5px / 0.16em "SACRED TIMELINE · STABLE" + 6px blinking amber dot. `pointer-events: none`. A `#skip-link` (visually hidden until focused) is the first focusable element. |
+| **The tube** (`#chrono`) | min-height 74vh desktop / 58vh ≤768px, full width | Background: walnut radial glow (at 50% 105%) over glass→glass-2 vertical gradient. `--console-lap: 120px` — the single number both the strip's pull-up and the CRT overlay/sweep bottom inset derive from (the old hardcoded −224px/288px pair covered branch tips and the readouts on every laptop height). Two SVG scenes, one per breakpoint: `#chrono-desktop` (1200×560) and `#chrono-mobile` (390×430 portrait, every branch and label in frame — `slice` used to guillotine 5 of 8 branches off a 390px viewport). `.crt-overlay`/`.sweep` inset `0 0 var(--console-lap) 0`. Bezel ring via `::before`, brand block upper-left, hero hint upper-right. Z-stack: SVG base → overlay (5) → sweep + bezel (6) → brandblock (10) → topbar (20). |
+| **Console strip** (`#searchzone`) | full width, `margin-top: -120px` (= `--console-lap`), padding 26px clamp(24px,6vw,96px) 30px, z-8 | Dark glass gradient (rgba(15,13,26,0.98) → glass-2), 1.5px amber 0.25 border-top, upward shadow 0 -18px 60px. Children centered: **machine readouts band** (CHRONO BAY 3 / REDLINE / HUNTERS / ANALYSTS — moved off the SVG floor, which the lap covered on every desktop size), input row (fixed 60px height, max 760px — multi-line queries scroll internally instead of tearing the strip), Miss Minutes greeting (max 56ch), scope dropdown (340px), selection-note + flight-note. |
+| **Paper zone** | 760px column on Desk Ground | Docket examples (60px top margin) → `#read` divider (80px top; 1.5px × 44px vertical hairline, centered) → ruling card (padding 34px 38px 30px) → evidence annex (56px top; rows on a 48px-numeral + 1fr grid, 18px column gap, each row an `#ev-nn` anchor target) → pipeline status (14px top) → colophon (100px top, 60px bottom padding). |
 
 ### Responsive (≤768px)
 - Topbar tightens (16px 20px); the status readout drops; brand runs 12px / 0.2em.
-- Tube drops to 54vh; overlay/sweep bottom inset extends to 300px.
-- The console strip **stacks naturally** — the −224px pull-up is calibrated to the desktop strip and is zeroed on mobile (margin-top 0, padding 24px 20px 26px).
+- Tube drops to 58vh; `--console-lap` zeroes and the overlay/sweep insets go to 0.
+- **The compact chronoscope takes over** (`#chrono-mobile`, 390×430 portrait): every branch, fork and label in frame and tappable — the full landscape scene under `slice` put 5 of 8 branches off-screen. The desktop scene is `display: none`d.
+- The console strip **stacks naturally** (margin-top 0, padding 24px 20px 26px); readouts wrap at 9px.
 - Brand block re-anchors from upper-left to the tube's foot (left/right 24px, bottom 76px) and clamps to 40–56px; lede tightens to 13.5px.
-- The hero hint is hidden — the chronoscope crops on narrow glass and must not promise what's off-screen. **The scope dropdown is the full scope mechanism on mobile** (and for keyboard users).
 - Input line: 56px height, 14px mono, right padding 120px. Button: 12px, padding 10px 14px. Ruling card: padding 26px 24px 24px. Evidence grid: 36px + 1fr, 14px gap.
 
 ## Elevation & Depth
@@ -271,7 +271,7 @@ Squared, bureaucratic, slightly rounded as if cut by a paper guillotine: 4px on 
 ## Components
 
 ### Input line — the console's query field
-- **Shape:** 4px radius, 60px tall, full width of the 760px search row.
+- **Shape:** 4px radius, 60px tall (fixed, `!important` — gradio's auto-grow inline style loses to it), full width of the 760px search row; multi-line queries scroll internally (`overflow-y: auto`, `line-height` normal) instead of growing the box and tearing the strip's geometry.
 - **Fill:** near-black glass (rgba(11,10,20,0.9)) with a 1.5px amber 0.35 border; text is Focused Phosphor (#FFCE85) in IBM Plex Mono 16px / 0.01em; placeholder in Dimmed Phosphor.
 - **Prompt glyph:** a `>` in mono 16px 500, amber, absolutely positioned at 20px left — the terminal caret.
 - **Focus:** border solidifies to full amber + a 3px amber 0.18 ring joins the shadow stack; `outline: none` is absorbed by that ring. Under `:focus-visible` globally, everything gets a 2px amber outline, offset 2.
@@ -291,16 +291,17 @@ Squared, bureaucratic, slightly rounded as if cut by a paper guillotine: 4px on 
 - **States:** `RULING ISSUED` (success), `PENDING FILE REQUEST` (empty), `REQUEST REJECTED` (pipeline error — paired with an apologetic archivist message).
 
 ### Evidence rows — the case-file annex
+- **Slots:** exactly the evidence rows the LLM may cite (`EVIDENCE_LIMIT` = 6, shared by synthesis and UI — a 12-seen/6-rendered mismatch once hid the citations the ruling actually used). Rows are `id='ev-nn'` anchor targets for the ruling's `[n]` chips.
 - **Grid:** 48px numeral column + 1fr body, 18px gap, 20px 6px padding, 1.5px hairline separators (top of each row; bottom on the last).
 - **Numeral:** mono 12px in Walnut (a wooden file marker).
 - **Body stack:** title (Manrope 700 15px ink) → branch badge → FILE meta → quote.
-- **Branch badge:** Oswald 10px / 0.16em uppercase in Walnut, 1px walnut 0.55 border, 3px radius, 1.5px 7px padding.
+- **Branch badge:** Oswald 10px / 0.16em uppercase in Walnut, 1px walnut 0.55 border, 3px radius, 1.5px 7px padding — **the chunk's real `timeline_id` from the store payload** (never guessed from the title: the old heuristic badged Spider-Man: Homecoming as RAMI and Deadpool & Wolverine as FOX X-MEN). Graph rows badge KNOWLEDGE GRAPH.
 - **FILE meta:** mono 10px / 0.12em uppercase in Tertiary Ink — the chunk id, the citation address.
-- **Quote:** 14px / 1.65 in Secondary Ink — the subtitle passage itself.
-- **Hover:** the whole row washes Phosphor Ghost **and lights the matching branch on the chronoscope above** (the evidence-hover bridge).
+- **Quote:** 14px / 1.65 in Secondary Ink — the subtitle passage itself, ellipsized only when actually truncated.
+- **Hover:** the whole row washes Phosphor Ghost **and lights the matching branch on the chronoscope above** (the evidence-hover bridge — the spine for MCU rows).
 
 ### Status line — pipeline truth
-- `#pipeline-status`: mono 10.5px / 0.16em uppercase, centered, Tertiary Ink. Reports which retrieval legs served the answer with honest degradation tiers: full (GRAPH · VECTOR · LEXICAL), graph down, vector down, or minimal (LEXICAL ONLY), each with elapsed seconds.
+- `#pipeline-status`: mono 10.5px / 0.16em uppercase, centered, Tertiary Ink. One word per retrieval leg, always in GRAPH · VECTOR · LEXICAL order, each in one of three states: plain (this ruling's citations include evidence the leg served), `(NO FILES)` (healthy, nothing this ruling used), or `UNREACHABLE` (backend could not be reached — never conflated with empty). Prefix `FILE PROCESSED`, or `FILE PROCESSED (DEGRADED)` when any leg is down; `NO BACKENDS REACHABLE — THE ARCHIVE IS DARK` when all three die; `NO EVIDENCE ON THIS BRANCH` when nothing was retrievable. Elapsed seconds always trail. In-flight requests show `REVIEWING FILE — THE ARCHIVIST IS CONSULTING THE RECORD…` in `#flight-note` (text, so reduced-motion users still get progress; the sweep is the motion tier of the same signal).
 
 ### Warn flag
 - Inline-flex, Rubber-Stamp Red 13.5px Manrope, led by a 15px hand-drawn SVG triangle (2px stroke, exclamation mark + dot). Appears inside the ruling card when the synthesizer reports uncertainty.
@@ -309,14 +310,14 @@ Squared, bureaucratic, slightly rounded as if cut by a paper guillotine: 4px on 
 - Mono 10.5px / 0.14em uppercase Tertiary Ink, centered: the pipeline's named parts (Neo4j Aura · Qdrant · MiniMax-M3) and the standing promise — "every claim cites subtitle evidence."
 
 ### Chronoscope — the signature component
-The inline-SVG chrono-monitor (viewBox 1200×560, `xMidYMid slice`, role=img with a full aria-label). Structure, back to front:
+Two inline-SVG scenes from one registry: the desktop composition (viewBox 1200×560, `xMidYMid slice`) and a 390×430 portrait (`#chrono-mobile`) for narrow glass where every branch and label fits in frame. `role="group"` with a full label — children stay in the a11y tree because the branches ARE buttons. Structure, back to front:
 - **Glass field:** radial gradient (#1A1630 → #14121F → #0B0A14), then a faint violet graticule grid (stroke #3A2E4A at 0.28 opacity, 60px × 40px cells).
-- **The Sacred Timeline spine:** one path entering low-right, arcing, receding upper-left (`M 1150 470 …`), drawn twice — a 2.6px Tube White core with a hot 1.1px blur, inside a 9px amber 0.22 sleeve with a 3px soft blur.
-- **Eight branches in three tiers:** fork point on the spine, organic quadratic elbow (28% x / 55% y control bend), tip; each drawn as a tier-weighted core (3.2 / 2.4 / 1.7px stroke by tier: primary, secondary, distant) over a 3× sleeve. Fork glow: a radial-gradient circle (14 / 10 / 7px by tier) + a 2.2px Focused Phosphor dot. Six live branches (Fox X-Men, Rami, Webb, Sony Universe, Defenders, What If...?) + two pruned stubs (Fox Fantastic Four, Spider-Verse) in Pruned Red at 0.4 opacity with matching labels.
-- **Labels:** Oswald 15px 500 / 0.14em amber, base opacity 0 (hidden), stroked 3.5px in near-black glass for legibility (paint-order: stroke), fading to 0.95 on hover / evidence-hover / selected. Fork radius bumps to 3.4 when selected.
-- **Hit areas:** every branch path carries an invisible 26px-wide twin path for picking — live ones get `cursor: pointer`, pruned get `not-allowed`.
+- **The Sacred Timeline spine:** one path entering low-right, arcing, receding upper-left (`M 1150 470 …`), drawn twice — a 2.6px Tube White core with a hot 1.1px blur, inside a 9px amber 0.22 sleeve with a 3px soft blur. **The spine is the mcu branch**: a `branch-g` group (`role="button"`, data-key="mcu") carrying both paths plus a 26px-wide hit path — MCU evidence rows light it via the hover bridge, and clicking it scopes to the Sacred Timeline.
+- **Eight branches in three tiers:** fork point on the spine, organic quadratic elbow (28% x / 55% y control bend), tip; each drawn as a tier-weighted core (3.2 / 2.4 / 1.7px stroke by tier: primary, secondary, distant) over a 3× sleeve, wrapped in a `branch-g` button group. Fork glow: a radial-gradient circle (14 / 10 / 7px by tier) + a 2.2px Focused Phosphor dot. Six live branches (Fox X-Men, Rami, Webb, Sony Universe, Defenders, What If...?) + two pruned stubs (Fox Fantastic Four, Spider-Verse) in Pruned Red at 0.4 opacity with matching labels. Branch tips stay above y≈310 in the desktop viewBox — below that, laptop-height crops plus the console lap made them unclickable (the TOBEY branch had a 0% hit area at 1280×720 before this).
+- **Labels:** Oswald 15px 500 / 0.14em amber (12px on mobile, `text-anchor` per side), base opacity 0 (hidden), stroked 3.5px in near-black glass for legibility (paint-order: stroke), fading to 0.95 on hover / evidence-hover / selected / focus-visible. Fork radius bumps to 3.4 when selected.
+- **Hit areas:** every branch path carries an invisible 26px-wide twin path for picking — live ones get `cursor: pointer`, pruned get `not-allowed`. The spine has one too.
 - **The redline:** one dashed (10-7) 1.6px Redline-Red line climbing the lower-left with "RED LINE — DO NOT CROSS" in mono 11px / 0.2em — the single threshold.
-- **Readouts:** four status pairs (CHRONO BAY 3, REDLINE, HUNTERS, ANALYSTS) in mono caps along the glass floor — keys 11px dim, values 13px amber / 0.18em.
+- **Readouts:** four status pairs (CHRONO BAY 3, REDLINE, HUNTERS, ANALYSTS) in mono caps — **on the console strip's own glass** (`#searchzone`), not the SVG floor: the floor sat behind the strip's lap on every desktop size, drawn and never seen.
 - **Chronology is truth:** fork positions follow real chronology along the spine (2000s → 2020s); branch reach follows archive holdings. The registry never shows a timeline the corpus doesn't hold.
 
 ### Motion
@@ -327,16 +328,19 @@ All motion is CRT-honest — light behaving like light, nothing bouncing:
 - **Reduced motion:** one global kill — `prefers-reduced-motion: reduce` zeroes every animation and transition (`!important`, all elements) and hard-hides `.sweep` entirely.
 
 ### Interaction bridges
-Three behaviors live in one head-injected script (`HERO_JS` via `gr.mount_gradio_app(head=…)`), all built on the shipped DOM:
-- **Click-to-scope:** clicking a live branch's hit area toggles selection (click again to clear), mirrors it onto every branch's selected class, writes "SCOPE LOCKED — [LABEL]" into the selection-note, and pushes the timeline key into a hidden bridge textbox (`#scope-tb`) via its native value setter + input event — gradio's own `.change` handler then maps key → dropdown label. Pruned branches are refused.
-- **Evidence-hover highlight:** hovering an evidence row adds `.hover` to the matching chronoscope branch group, lighting it on the glass.
-- **Pending mirror (the load-bearing hack):** gradio marks in-flight requests with `.pending` on the button block, but gradio's CSS re-scoping makes body-level classes unreachable — so a MutationObserver on body class attributes toggles `.processing` on `#chrono`, which is what drives the sweep-retrace.
+All behaviors live in one head-injected script (`HERO_JS` via `gr.mount_gradio_app(head=…)`), built on the shipped DOM:
+- **Click-to-scope:** clicking a live branch's hit area toggles selection, mirrors it onto every branch's selected class (both scenes), sets `aria-pressed`, writes "SCOPE LOCKED — [LABEL]" into the selection-note (aria-live), and pushes the timeline key into a hidden bridge textbox (`#scope-tb`, native value setter + input event) — gradio's own `.change` handler then maps key → dropdown label. Pruned branches refuse and explain ("PRUNED — NO FILES ON THIS BRANCH"). Branches are real `role="button"` SVG groups — tabbable and Enter/Space-activatable.
+- **Scope echo (the reverse bridge):** the dropdown's `.change` handler re-emits the bridge block with the chosen label in `#scope-echo`; a body-level MutationObserver reads it and syncs SVG selection + note. Both paths converge on the echo, so the dropdown can never disagree with the glass (the old one-way bridge left a lit branch reading "SCOPE LOCKED" while the scope was actually All).
+- **Evidence-hover highlight:** hovering an evidence row adds `.hover` to the matching chronoscope branch group — including the spine for `mcu` rows (the spine IS the mcu branch group; 31.5% of the corpus previously lit nothing).
+- **Citation jumps:** `[n]` markers in the ruling are amber link chips (`#ev-nn` anchors) — click one, the evidence row scrolls into view.
+- **Pending mirror (the load-bearing hack):** gradio marks in-flight requests with `.pending` on the button block, but gradio's CSS re-scoping makes body-level classes unreachable — so a MutationObserver on body class attributes toggles `.processing` on `#chrono` (the sweep retrace) and writes the in-flight note. A capture-phase click guard swallows FILE REQUEST clicks while `.pending` is up — impatience clicks no longer stack 40s searches in the queue.
 
 ### Accessibility
 - **Contrast (verified):** Tertiary Ink on Intake Paper 7.5:1; Secondary Ink on Paper 7.3:1; Form Ink on Glass 15.5:1; Stamp Red on Paper 5.3:1; Dimmed Phosphor on Glass 5.5:1; Focused Phosphor on input-glass 9.9:1; amber on near-black glass 8.9:1. The pruned-reds are the marginal cases (D05A48 on glass 4.6:1, used at 0.55–0.4 opacity for deliberately dimmed labels; E4604C redline caption 4.8:1) — the redline is signage, not body copy, and stays short.
-- **Focus:** global `:focus-visible` = 2px solid amber outline, 2px offset; the input line's focus is a full border shift + 3px amber ring.
-- **Reduced motion:** all animation and transition killed; the sweep is removed from the layout.
-- **Semantics:** the chronoscope SVG carries `role="img"` + a full label; decorative layers (overlay, sweep, bezel) are `aria-hidden` or pseudo-elements; the topbar's diamond mark is aria-hidden; the warn triangle is aria-hidden with adjacent text. Branch picking runs on real pointer events with a visible keyboard alternative (the scope dropdown) — no interaction exists only inside the SVG.
+- **Focus:** global `:focus-visible` = 2px solid amber outline, 2px offset; the input line's focus is a full border shift + 3px amber ring; branch groups light their core + label on focus-visible.
+- **Reduced motion:** all animation and transition killed; the sweep is removed from the layout; progress feedback is text (`#flight-note`), not animation.
+- **Semantics:** the chronoscope SVG is `role="group"` with a full label and its branches are real `role="button"` SVG groups (tabbable, Enter/Space-activatable, `aria-pressed` for selection state) — pruned branches are `tabindex=-1` + `aria-disabled`; the scope dropdown remains the listing alternative. Both console controls carry accessible names (aria-labels re-applied by the bridge when gradio re-renders); `#scope-tb` is `visibility: hidden` + `tabindex=-1` (never a tab trap); hidden gradio footer chrome is removed from the tab order; decorative layers (overlay, sweep, bezel, readouts band) are `aria-hidden`; the warn triangle is aria-hidden with adjacent text. A `#skip-link` lands keyboard users on the request line in one jump.
+- **Live regions:** the selection-note, the flight note and the pipeline status are `aria-live="polite"` — a 40-second search announces its own completion; the evidence annex announces new rows.
 - **Selection:** text selection is amber (rgba(255,183,74,0.35)) with ink text — the browser surfaces belong to this world too. Scrollbars are themed in both engines: walnut thumb with paper-2 track.
 
 ### Gradio integration truths (for future maintainers)

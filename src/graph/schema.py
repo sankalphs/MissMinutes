@@ -72,6 +72,10 @@ class Graph:
                 s.run(f"CREATE CONSTRAINT IF NOT EXISTS FOR (n:{label}) REQUIRE n.id IS UNIQUE")
             s.run("CREATE INDEX IF NOT EXISTS FOR (n:Event) ON (n.canonical_date)")
             s.run("CREATE INDEX IF NOT EXISTS FOR (n:Timeline) ON (n.name)")
+            # entity lookup filters on toLower(name) across all labels; the
+            # full 50k-node scans were the graph leg's latency floor
+            for label in NODE_LABELS - {"Timeline"}:
+                s.run(f"CREATE INDEX IF NOT EXISTS FOR (n:{label}) ON (n.name)")
         logger.info("schema initialized: %d labels, %d rel types", len(NODE_LABELS), len(REL_TYPES))
 
     def seed_timelines(self) -> None:

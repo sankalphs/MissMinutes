@@ -1,8 +1,13 @@
 """Deploy MissMinutes to HF Space (requires HF PRO for gradio sdk).
 
 Run: python scripts/deploy_space.py
-Copies app.py, src/, space/README.md (as Space README), requirements.txt
-into a temp dir and pushes to sankalphs/MissMinutes.
+Copies app.py, src/, ui/, space/README.md (as Space README), requirements.txt
+and the SQLite corpus (data/missminutes.db — HF's git auto-LFSes >10MB
+files) into a temp dir and pushes to sankalphs/MissMinutes.
+
+The Qdrant store is NOT shipped (local-mode is single-process + ~360MB) —
+the Space must set QDRANT_URL/QDRANT_API_KEY to a cloud collection
+populated by scripts/index_vectors.py.
 """
 import shutil
 import subprocess
@@ -30,6 +35,16 @@ def main() -> None:
             shutil.copy2(src, dst / item)
         else:
             shutil.copytree(src, dst / item, dirs_exist_ok=True)
+
+    # the corpus: the Space's Store reads data/missminutes.db relative to
+    # the repo root — without it the Space searches an empty archive
+    db = ROOT / "data" / "missminutes.db"
+    if db.exists():
+        (dst / "data").mkdir(exist_ok=True)
+        shutil.copy2(db, dst / "data" / "missminutes.db")
+    else:
+        print("WARNING: data/missminutes.db not found — the Space will run "
+              "on an empty archive")
 
     # space README carries sdk metadata
     shutil.copy2(ROOT / "space" / "README.md", dst / "README.md")
