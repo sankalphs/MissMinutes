@@ -15,7 +15,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from src.graph.schema import Graph
+from src.graph.schema import NODE_LABELS, Graph
 from src.ingestion.store import Store
 from src.kg.resolve import EntityResolver
 from src.kg.schemas import ChunkExtraction
@@ -65,7 +65,8 @@ def load_all(graph: Graph, resolver: EntityResolver, store: Store, model: str,
         con.commit()
     con.close()
 
-    totals = {"entities": 0, "events": 0, "relations": 0, "temporals": 0, "chunks": 0, "skipped": 0}
+    totals = {"nodes": 0, "entities": 0, "events": 0, "relations": 0,
+              "temporals": 0, "chunks": 0, "skipped": 0}
     docs = store.all_documents()
     doc_by_id = {d["document_id"]: d for d in docs}
 
@@ -76,14 +77,32 @@ def load_all(graph: Graph, resolver: EntityResolver, store: Store, model: str,
     logger.info("loading %d cached extractions (model=%s, %d already loaded)",
                 len(rows), model, len(loaded))
 
-    ent_batch: list[dict] = []
+    # node rows keyed by id: every registered endpoint becomes a node write,
+    # otherwise MATCH in _write_rels silently drops the edge (dangling end)
+    ent_batch: dict[str, dict] = {}
     ev_batch: list[dict] = []
     rel_batch: list[dict] = []
     ledger_batch: list[tuple] = []
 
+    def queue_entity(cid: str, prov: str, chunk: str) -> None:
+        """Queue a node write for a registered id, using the resolver's
+        canonical name/type. Richest alias set wins across chunks."""
+        ent = resolver.entity(cid)
+        if ent is None:
+            return
+        row = ent_batch.get(cid)
+        if row is None:
+            ent_batch[cid] = {"id": cid, "label": ent["type"], "name": ent["name"],
+                              "aliases": ent["aliases"], "prov": prov, "chunk": chunk}
+        else:
+            row["prov"], row["chunk"] = prov, chunk
+            if len(ent["aliases"]) > len(row["aliases"]):
+                row["aliases"] = ent["aliases"]
+
     def flush() -> None:
         if ent_batch:
-            _write_entities(graph, ent_batch)
+            totals["nodes"] += len(ent_batch)
+            _write_entities(graph, list(ent_batch.values()))
             ent_batch.clear()
         if ev_batch:
             _write_events(graph, ev_batch)
@@ -124,10 +143,7 @@ def load_all(graph: Graph, resolver: EntityResolver, store: Store, model: str,
 
         for ent in ex.entities:
             cid = resolver.register(ent.name, ent.type.value, ent.aliases)
-            ent_batch.append({
-                "id": cid, "label": ent.type.value, "name": ent.name,
-                "aliases": ent.aliases, "prov": prov_json, "chunk": chunk_id,
-            })
+            queue_entity(cid, prov_json, chunk_id)
             totals["entities"] += 1
 
         for ev in ex.events:
@@ -140,21 +156,27 @@ def load_all(graph: Graph, resolver: EntityResolver, store: Store, model: str,
                 "timeline": f"timeline:{doc.get('timeline_id')}",
                 "document": doc["document_id"],
             })
+            queue_entity(ev_id, prov_json, chunk_id)
             totals["events"] += 1
             for p in ev.participants:
                 p_id = resolver.register(p, "Character")
+                queue_entity(p_id, prov_json, chunk_id)
                 rel_batch.append({"src": p_id, "rel": "PARTICIPATES_IN", "dst": ev_id, "prov": prov_json})
             for o in ev.objects:
                 o_id = resolver.register(o, "Object")
+                queue_entity(o_id, prov_json, chunk_id)
                 rel_batch.append({"src": ev_id, "rel": "INVOLVES", "dst": o_id, "prov": prov_json})
             if ev.location:
                 loc_id = resolver.register(ev.location, "Location")
+                queue_entity(loc_id, prov_json, chunk_id)
                 rel_batch.append({"src": ev_id, "rel": "OCCURS_AT", "dst": loc_id, "prov": prov_json})
 
         for rel in ex.relations:
-            # register endpoints so edges never dangle (v1 bug)
+            # registered endpoints are queued as node writes, so edges never dangle
             src_id = resolver.register(rel.source, "Character")
             dst_id = resolver.register(rel.target, "Character")
+            queue_entity(src_id, prov_json, chunk_id)
+            queue_entity(dst_id, prov_json, chunk_id)
             if src_id == dst_id:
                 continue
             rel_batch.append({"src": src_id, "rel": rel.relation.value, "dst": dst_id, "prov": prov_json})
@@ -163,6 +185,8 @@ def load_all(graph: Graph, resolver: EntityResolver, store: Store, model: str,
         for t in ex.temporals:
             a_id = resolver.register(t.event_a, "Event")
             b_id = resolver.register(t.event_b, "Event")
+            queue_entity(a_id, prov_json, chunk_id)
+            queue_entity(b_id, prov_json, chunk_id)
             if a_id == b_id:
                 continue
             if t.relation == "AFTER":
@@ -218,6 +242,18 @@ def _load_documents(graph: Graph, docs: list[dict], doc_prefix: str | None) -> N
                         tl=d["timeline_id"], season=d["season"], episode=d["episode"],
                         tlid=f"timeline:{d['timeline_id']}",
                     )
+                else:
+                    s.run(
+                        """MERGE (s:Series {id: $id})
+                           ON CREATE SET s.name = $name, s.year = $year, s.timeline = $tl,
+                                          s.canonical = $canon
+                           WITH s
+                           MATCH (t:Timeline {id: $tlid})
+                           MERGE (s)-[:DEPICTED_IN]->(t)""",
+                        id=d["document_id"], name=d["title"], year=d["year"],
+                        tl=d["timeline_id"], canon=d.get("canonical", 1),
+                        tlid=f"timeline:{d['timeline_id']}",
+                    )
 
 
 def _write_entities(graph: Graph, batch: list[dict]) -> None:
@@ -225,20 +261,26 @@ def _write_entities(graph: Graph, batch: list[dict]) -> None:
         # one UNWIND per label
         by_label: dict[str, list] = defaultdict(list)
         for b in batch:
+            if b["label"] not in NODE_LABELS:
+                logger.warning("skipping node with unknown label %r (%s)", b["label"], b["id"])
+                continue
             by_label[b["label"]].append(b)
         for label, rows in by_label.items():
             s.run(
                 f"""UNWIND $rows AS r
                     MERGE (n:{label} {{id: r.id}})
                     ON CREATE SET n.name = r.name, n.created_at = timestamp()
-                    SET n.aliases = r.aliases, n.provenance = r.prov, n.last_chunk = r.chunk""",
+                    SET n.aliases = CASE
+                            WHEN size(coalesce(r.aliases, [])) > size(coalesce(n.aliases, []))
+                            THEN r.aliases ELSE coalesce(n.aliases, []) END,
+                        n.provenance = r.prov, n.last_chunk = r.chunk""",
                 rows=rows,
             )
 
 
 def _write_events(graph: Graph, batch: list[dict]) -> None:
     with graph.session() as s:
-        s.run(
+        stats = s.run(
             """UNWIND $rows AS r
                MERGE (n:Event {id: r.id})
                ON CREATE SET n.name = r.name, n.created_at = timestamp()
@@ -246,13 +288,23 @@ def _write_events(graph: Graph, batch: list[dict]) -> None:
                    n.evidence_quote = r.evidence_quote, n.provenance = r.prov,
                    n.last_chunk = r.chunk
                WITH n, r
-               MATCH (t:Timeline {id: r.timeline})
-               MERGE (n)-[:OCCURS_IN]->(t)
-                WITH n, r
-                MATCH (x) WHERE (x:Movie OR x:Episode) AND x.id = r.document
-                MERGE (n)-[:DEPICTED_IN]->(x)""",
+               OPTIONAL MATCH (t:Timeline {id: r.timeline})
+               WITH n, r, t
+               OPTIONAL MATCH (x) WHERE (x:Movie OR x:Episode OR x:Series) AND x.id = r.document
+               FOREACH (_ IN CASE WHEN t IS NOT NULL THEN [1] ELSE [] END |
+                   MERGE (n)-[:OCCURS_IN]->(t))
+               FOREACH (_ IN CASE WHEN x IS NOT NULL THEN [1] ELSE [] END |
+                   MERGE (n)-[:DEPICTED_IN]->(x))
+               RETURN sum(CASE WHEN t IS NULL THEN 1 ELSE 0 END) AS missing_timeline,
+                      sum(CASE WHEN x IS NULL THEN 1 ELSE 0 END) AS missing_document""",
             rows=batch,
-        )
+        ).single()
+    if stats["missing_timeline"]:
+        logger.warning("%d events reference an unseeded Timeline — seed_timelines first",
+                       stats["missing_timeline"])
+    if stats["missing_document"]:
+        logger.warning("%d events reference a missing Movie/Episode/Series document node",
+                       stats["missing_document"])
 
 
 def _write_rels(graph: Graph, batch: list[dict]) -> None:
@@ -261,15 +313,20 @@ def _write_rels(graph: Graph, batch: list[dict]) -> None:
         for b in batch:
             by_rel[b["rel"]].append(b)
         for rel, rows in by_rel.items():
-            s.run(
+            written = s.run(
                 f"""UNWIND $rows AS r
-                    MATCH (a) WHERE (a:Character OR a:Event OR a:Movie OR a:Episode
-                                    OR a:Location OR a:Object OR a:Organization)
-                                   AND a.id = r.src
-                    MATCH (b) WHERE (b:Character OR b:Event OR b:Movie OR b:Episode
-                                    OR b:Location OR b:Object OR b:Organization)
-                                   AND b.id = r.dst
+                    OPTIONAL MATCH (a) WHERE (a:Character OR a:Event OR a:Movie OR a:Series
+                                              OR a:Episode OR a:Location OR a:Object
+                                              OR a:Organization) AND a.id = r.src
+                    OPTIONAL MATCH (b) WHERE (b:Character OR b:Event OR b:Movie OR b:Series
+                                              OR b:Episode OR b:Location OR b:Object
+                                              OR b:Organization) AND b.id = r.dst
+                    WITH r, a, b WHERE a IS NOT NULL AND b IS NOT NULL
                     MERGE (a)-[e:{rel}]->(b)
-                    ON CREATE SET e.provenance = r.prov, e.created_at = timestamp()""",
+                    ON CREATE SET e.provenance = r.prov, e.created_at = timestamp()
+                    RETURN count(e) AS written""",
                 rows=rows,
-            )
+            ).single()["written"]
+            if written < len(rows):
+                logger.warning("rel %s: %d/%d rows had a missing endpoint node",
+                               rel, len(rows) - written, len(rows))

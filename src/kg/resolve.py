@@ -498,6 +498,14 @@ class EntityResolver:
         self._persist(cid)
         return cid
 
+    def entity(self, cid: str) -> dict | None:
+        """Canonical record (name, type, aliases) for an id, or None."""
+        ent = self._entities.get(cid)
+        if ent is None:
+            return None
+        return {"id": cid, "name": ent["name"], "type": ent["type"],
+                "aliases": list(ent["aliases"])}
+
     def known_entities(self) -> list[dict]:
         return [
             {"id": cid, "name": e["name"], "type": e["type"], "aliases": e["aliases"]}
