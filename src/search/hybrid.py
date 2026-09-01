@@ -12,7 +12,6 @@ this query/branch), down (backend unreachable) — so the status line can
 tell "no files" from "backend down" and name the leg that died.
 """
 import logging
-import os
 import re
 from typing import Any
 
@@ -28,14 +27,9 @@ logger = logging.getLogger(__name__)
 # a runaway graph query must die server-side, not hang the worker thread
 _CYPHER_TIMEOUT_S = 8.0
 
-# --- experiment knobs (eval-only; integration keeps the winning mode) ------
-# MM_EVAL_LEXICAL: current | bm25 | full_bm25 | full_bm25_k10
-# MM_EVAL_FUSION:  current | rrf | weighted   (alpha via MM_EVAL_FUSION_ALPHA)
-# MM_EVAL_RERANKER: none | bge | msmarco      (implemented in src/search/rerank.py)
-LEXICAL_MODE = os.getenv("MM_EVAL_LEXICAL", "current")
-FUSION_MODE = os.getenv("MM_EVAL_FUSION", "current")
-FUSION_ALPHA = float(os.getenv("MM_EVAL_FUSION_ALPHA", "0.5"))
-RERANKER = os.getenv("MM_EVAL_RERANKER", "none")
+# fusion blend, tuned on the golden retrieval set (src/eval): bm25 should
+# dominate with cosine as a ~30% assist — alpha 0.7 collapsed recall
+_FUSION_ALPHA = 0.3
 
 _STOPWORDS = {
     "the", "a", "an", "of", "to", "in", "on", "at", "with", "and", "or",
@@ -55,34 +49,23 @@ def _tokens(text: str) -> list[str]:
 # lexical leg
 # --------------------------------------------------------------------------
 
-def lexical_search(store: Store, plan: QueryPlan, query: str, limit: int = 10) -> tuple[list[dict], str]:
-    """FTS5 lexical search; scoped to plan.timeline when set.
+def lexical_search(store: Store, plan: QueryPlan, query: str, limit: int = 20) -> tuple[list[dict], str]:
+    """FTS5 lexical search: planner entity phrases + raw-query content
+    tokens, OR-joined and bm25-ranked. Scoped to plan.timeline when set.
 
-    Modes (MM_EVAL_LEXICAL):
-      current      — entity phrases only, insertion order (the old behavior)
-      bm25         — entity phrases, ranked by bm25
-      full_bm25    — entity phrases + raw-query content tokens, bm25, 20 hits
-      full_bm25_k10— full_bm25 with the standard 10-hit cap
-
-    Exceptions propagate — a dead lexical leg must be reported, not
-    swallowed (the old silent `return []` masked a thread-unsafe Store).
+    The expression goes to fts_search raw=True — it is pre-sanitized here,
+    and _fts_match's term-by-term re-quoting would destroy the OR operators
+    (the legacy bug that left this leg at 0.12 doc recall). Entity phrases
+    carry proper names the tokenizer would split; query tokens keep the
+    leg alive even when the planner degrades to zero entities. Exceptions
+    propagate — a dead lexical leg must be reported, not swallowed.
     """
-    if LEXICAL_MODE == "current":
-        terms = [_fts_safe(t) for t in plan.entities[:6]]
-        terms = [t for t in terms if t]
-        joined = " OR ".join(f'"{t}"' for t in terms)
-    else:
-        joined = _lexical_query(plan, query)
-        if not joined:
-            return [], "empty"
-        if LEXICAL_MODE == "full_bm25":
-            limit = 20
+    joined = _lexical_query(plan, query)
     if not joined:
         return [], "empty"
     try:
         hits = store.fts_search(joined, limit=limit, timeline=plan.timeline,
-                                rank=LEXICAL_MODE != "current",
-                                raw=LEXICAL_MODE != "current")
+                                rank=True, raw=True)
     except Exception as e:
         logger.warning("lexical search failed: %s", e)
         return [], "down"
@@ -362,9 +345,6 @@ def _resolve_endpoint(s, entity: str, cap: int = 3) -> list[str]:
 # rerank
 # --------------------------------------------------------------------------
 
-_RRF_K = 60
-
-
 def _graph_rows(graph_hits: list[dict]) -> list[dict]:
     """Graph evidence rows with the production fixed scores — synthetic rows
     are capped (paths<=2, entities<=3) so grounded subtitle passages keep
@@ -400,29 +380,11 @@ def _mark_source(entry: dict, leg: str) -> None:
     data["source"] = "+".join(legs) if legs else leg
 
 
-def _fuse_rrf(lex: list[dict], sem: list[dict]) -> list[dict]:
-    """Reciprocal Rank Fusion: each leg votes 1/(k+rank); no score-scale
-    guessing between cosine and bm25."""
-    out: dict[str, dict] = {}
-    for leg, hits in (("vector", sem), ("fts", lex)):
-        for i, h in enumerate(hits, 1):
-            cid = h.get("chunk_id")
-            if not cid:
-                continue
-            e = out.setdefault(cid, {"key": cid, "type": "chunk",
-                                     "score": 0.0, "data": dict(h)})
-            e["score"] += 1.0 / (_RRF_K + i)
-            e["data"].setdefault("title", h.get("title"))
-            _mark_source(e, leg)
-            if leg == "fts" and h.get("bm25") is not None:
-                e["data"]["bm25"] = h["bm25"]
-    return sorted(out.values(), key=lambda x: -x["score"])
-
-
 def _fuse_weighted(lex: list[dict], sem: list[dict]) -> list[dict]:
     """Linear blend: alpha*cosine + (1-alpha)*minmax(bm25). Cosine is
     already 0..1; bm25 is minmax-normalized within the leg's hit set
-    (rank-decay fallback when bm25 is absent)."""
+    (rank-decay fallback when bm25 is absent). Weighted beat RRF on the
+    golden set at every alpha <= 0.5 — RRF flattens rank order."""
     out: dict[str, dict] = {}
     bm = [h["bm25"] for h in lex if h.get("bm25") is not None]
     lo, hi = (min(bm), max(bm)) if bm else (0.0, 0.0)
@@ -437,14 +399,14 @@ def _fuse_weighted(lex: list[dict], sem: list[dict]) -> list[dict]:
         if not cid:
             continue
         e = {"key": cid, "type": "chunk",
-             "score": FUSION_ALPHA * h.get("score", 0.0), "data": dict(h)}
+             "score": _FUSION_ALPHA * h.get("score", 0.0), "data": dict(h)}
         _mark_source(e, "vector")
         out[cid] = e
     for i, h in enumerate(lex):
         cid = h.get("chunk_id")
         if not cid:
             continue
-        contrib = (1 - FUSION_ALPHA) * lex_norm(h, i)
+        contrib = (1 - _FUSION_ALPHA) * lex_norm(h, i)
         e = out.get(cid)
         if e:
             e["score"] += contrib
@@ -458,51 +420,15 @@ def _fuse_weighted(lex: list[dict], sem: list[dict]) -> list[dict]:
     return sorted(out.values(), key=lambda x: -x["score"])
 
 
-def _rerank_fused(plan: QueryPlan, query: str, lex: list[dict], sem: list[dict],
-                  graph_hits: list[dict]) -> dict[str, Any]:
-    """Fused ranking: graph rows keep their fixed scores and caps; chunks
-    are scored by fusion (rrf/weighted) and optionally re-scored by a
-    cross-encoder (MM_EVAL_RERANKER) before the final merge."""
-    combined: dict[str, dict] = {}
-    graph_rows = _graph_rows(graph_hits)
-    paths = [r for r in graph_rows if r["entry"]["type"] == "path"][:2]
-    entities = [r for r in graph_rows if r["entry"]["type"] == "entity"][:3]
-    for r in paths + entities:
-        combined[r["key"]] = r["entry"]
-
-    chunks = (_fuse_weighted(lex, sem) if FUSION_MODE == "weighted"
-              else _fuse_rrf(lex, sem))
-    if RERANKER != "none":
-        from src.search.rerank import cross_encoder_scores
-
-        top = chunks[:24]
-        for c, s in zip(top, cross_encoder_scores(query, [c["data"]["text"] for c in top])):
-            c["score"] = s
-        chunks = sorted(chunks, key=lambda c: -c["score"])
-    for c in chunks:
-        combined.setdefault(c["key"], c)
-
-    ranked = sorted(combined.values(), key=lambda x: -x["score"])
-    return {
-        "plan": plan.model_dump(),
-        "results": ranked[:20],
-    }
-
-
 def rerank(plan: QueryPlan, query: str, lex: list[dict], sem: list[dict],
            graph_hits: list[dict]) -> dict[str, Any]:
-    """Combine scores: paths > grounded chunks > entity/event rows > lexical
-    only. Graph evidence informs, it never dominates — synthetic rows
-    (neighbor name lists, event names) are capped so grounded subtitle
-    passages hold the majority of the evidence the LLM sees (a 20-row
-    temporal walk once crowded 5 of 6 slots and hedged the flagship
-    answer).
-
-    MM_EVAL_FUSION=rrf|weighted (optionally MM_EVAL_RERANKER) switches to
-    score-aware fusion — the current mode keeps the legacy fixed scores."""
-    if FUSION_MODE in ("rrf", "weighted") or RERANKER != "none":
-        return _rerank_fused(plan, query, lex, sem, graph_hits)
-
+    """Fuse legs, rerank, and cap: graph paths first (capped at 2), then
+    chunks re-scored by a cross-encoder over the top-24 fused pool, then
+    up to 3 graph entity rows. Graph evidence informs, it never dominates
+    — synthetic rows (neighbor name lists, event names) are capped so
+    grounded subtitle passages hold the majority of the evidence the LLM
+    sees (a 20-row temporal walk once crowded 5 of 6 slots and hedged the
+    flagship answer)."""
     combined: dict[str, dict] = {}
     graph_rows = _graph_rows(graph_hits)
     paths = [r for r in graph_rows if r["entry"]["type"] == "path"][:2]
@@ -510,24 +436,15 @@ def rerank(plan: QueryPlan, query: str, lex: list[dict], sem: list[dict],
     for r in paths + entities:
         combined[r["key"]] = r["entry"]
 
-    for i, h in enumerate(sem):
-        cid = h.get("chunk_id")
-        if cid and cid not in combined:
-            combined[cid] = {
-                "type": "chunk",
-                "score": 0.44 + (0.2 * (len(sem) - i) / max(len(sem), 1)),
-                "data": h,
-            }
+    chunks = _fuse_weighted(lex, sem)
+    from src.search.rerank import cross_encoder_scores  # lazy: heavy torch import
 
-    for h in lex:
-        cid = h.get("chunk_id")
-        if cid in combined and combined[cid]["type"] == "chunk":
-            combined[cid]["score"] += 0.1
-            # the chunk was served by BOTH legs — keep the attribution so
-            # the status line can name every leg that fed the ruling
-            combined[cid]["data"]["source"] = "fts+vector"
-        elif cid and cid not in combined:
-            combined[cid] = {"type": "chunk", "score": 0.34, "data": h}
+    top = chunks[:24]
+    for c, s in zip(top, cross_encoder_scores(query, [c["data"]["text"] for c in top])):
+        c["score"] = s
+    chunks = sorted(chunks, key=lambda c: -c["score"])
+    for c in chunks:
+        combined.setdefault(c["key"], c)
 
     ranked = sorted(combined.values(), key=lambda x: -x["score"])
     return {

@@ -3,17 +3,15 @@ import os
 
 import pytest
 
-from src.search.rerank import cross_encoder_scores
+from src.search.rerank import DEFAULT_RERANKER_MODEL, cross_encoder_scores
 
 
-def test_unknown_model_raises(monkeypatch) -> None:
-    monkeypatch.setenv("MM_EVAL_RERANKER", "bogus")
-    with pytest.raises(ValueError, match="MM_EVAL_RERANKER"):
-        cross_encoder_scores("Loki", ["loki text"])
+def test_unknown_model_raises() -> None:
+    with pytest.raises(ValueError, match="reranker model"):
+        cross_encoder_scores("Loki", ["loki text"], model_name="bogus")
 
 
-def test_empty_texts_returns_empty(monkeypatch) -> None:
-    monkeypatch.setenv("MM_EVAL_RERANKER", "msmarco")
+def test_empty_texts_returns_empty() -> None:
     assert cross_encoder_scores("Loki", []) == []
 
 
@@ -29,11 +27,11 @@ def test_sigmoid_is_stable_at_extremes() -> None:
     not os.getenv("MM_RERANK_SMOKE"),
     reason="downloads model weights; run explicitly with MM_RERANK_SMOKE=1",
 )
-def test_real_model_smoke(monkeypatch) -> None:
-    monkeypatch.setenv("MM_EVAL_RERANKER", "msmarco")
+def test_real_model_smoke() -> None:
     scores = cross_encoder_scores(
         "Who is Loki?",
         ["Loki is the god of mischief in Asgard.", "The Tesseract glows blue."],
+        model_name=DEFAULT_RERANKER_MODEL,
     )
     assert len(scores) == 2
     assert all(math.isfinite(s) and 0.0 <= s <= 1.0 for s in scores)

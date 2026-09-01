@@ -239,8 +239,7 @@ def run_eval(fixture: Path, no_graph: bool = False, legs: bool = False,
         }
     report["config"] = {
         k: os.getenv(k) for k in (
-            "MM_EVAL_LEXICAL", "MM_EVAL_FUSION", "MM_EVAL_RERANKER",
-            "MM_EVAL_FUSION_ALPHA", "EMBEDDING_MODEL", "QDRANT_COLLECTION",
+            "EMBEDDING_MODEL", "QDRANT_COLLECTION", "QDRANT_LOCAL_PATH",
         ) if os.getenv(k)
     }
     return report
