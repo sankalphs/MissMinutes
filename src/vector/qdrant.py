@@ -20,8 +20,9 @@ def make_client():
     if settings.QDRANT_URL:
         logger.info("qdrant: cloud %s", settings.QDRANT_URL)
         return QdrantClient(url=settings.QDRANT_URL, api_key=settings.QDRANT_API_KEY, timeout=30)
-    logger.warning("qdrant: QDRANT_URL unset — using LOCAL persistence data/processed/qdrant")
-    return QdrantClient(path=str(settings.PROCESSED_DIR / "qdrant"))
+    local = settings.QDRANT_LOCAL_PATH or str(settings.PROCESSED_DIR / "qdrant")
+    logger.warning("qdrant: QDRANT_URL unset — using LOCAL persistence %s", local)
+    return QdrantClient(path=local)
 
 
 class VectorStore:

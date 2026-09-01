@@ -41,8 +41,11 @@ class Settings:
     PROCESSED_DIR: Path = ROOT / "data" / "processed"
     HF_TOKEN: str = os.getenv("HF_TOKEN", "")
 
-    # Qdrant collection
-    QDRANT_COLLECTION: str = "missminutes_chunks"
+    # Qdrant collection (QDRANT_COLLECTION / QDRANT_LOCAL_PATH let the
+    # retrieval eval run parallel experiment collections without touching
+    # the production store)
+    QDRANT_COLLECTION: str = os.getenv("QDRANT_COLLECTION", "missminutes_chunks")
+    QDRANT_LOCAL_PATH: str = os.getenv("QDRANT_LOCAL_PATH", "")
     GRAPH_PROJECT_ID: str = "missminutes"
 
     def ensure_dirs(self) -> None:

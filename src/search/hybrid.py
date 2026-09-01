@@ -12,6 +12,7 @@ this query/branch), down (backend unreachable) — so the status line can
 tell "no files" from "backend down" and name the leg that died.
 """
 import logging
+import os
 import re
 from typing import Any
 
@@ -27,9 +28,22 @@ logger = logging.getLogger(__name__)
 # a runaway graph query must die server-side, not hang the worker thread
 _CYPHER_TIMEOUT_S = 8.0
 
+# --- experiment knobs (eval-only; integration keeps the winning mode) ------
+# MM_EVAL_LEXICAL: current | bm25 | full_bm25 | full_bm25_k10
+# MM_EVAL_FUSION:  current | rrf | weighted   (alpha via MM_EVAL_FUSION_ALPHA)
+# MM_EVAL_RERANKER: none | bge | msmarco      (implemented in src/search/rerank.py)
+LEXICAL_MODE = os.getenv("MM_EVAL_LEXICAL", "current")
+FUSION_MODE = os.getenv("MM_EVAL_FUSION", "current")
+FUSION_ALPHA = float(os.getenv("MM_EVAL_FUSION_ALPHA", "0.5"))
+RERANKER = os.getenv("MM_EVAL_RERANKER", "none")
+
 _STOPWORDS = {
     "the", "a", "an", "of", "to", "in", "on", "at", "with", "and", "or",
     "is", "was", "were", "did", "do", "does", "after", "before", "that",
+    "what", "who", "when", "where", "how", "why", "which", "whose", "whom",
+    "are", "can", "could", "happen", "happened", "happens", "caused", "cause",
+    "made", "make", "belong", "belongs", "tell", "about", "there", "their",
+    "from", "this", "these", "those", "have", "has", "had", "get", "got",
 }
 
 
@@ -42,24 +56,59 @@ def _tokens(text: str) -> list[str]:
 # --------------------------------------------------------------------------
 
 def lexical_search(store: Store, plan: QueryPlan, query: str, limit: int = 10) -> tuple[list[dict], str]:
-    """FTS5 over entity terms; scoped to plan.timeline when set.
+    """FTS5 lexical search; scoped to plan.timeline when set.
+
+    Modes (MM_EVAL_LEXICAL):
+      current      — entity phrases only, insertion order (the old behavior)
+      bm25         — entity phrases, ranked by bm25
+      full_bm25    — entity phrases + raw-query content tokens, bm25, 20 hits
+      full_bm25_k10— full_bm25 with the standard 10-hit cap
 
     Exceptions propagate — a dead lexical leg must be reported, not
     swallowed (the old silent `return []` masked a thread-unsafe Store).
     """
-    terms = [_fts_safe(t) for t in plan.entities[:6]]
-    terms = [t for t in terms if t]
-    if not terms:
+    if LEXICAL_MODE == "current":
+        terms = [_fts_safe(t) for t in plan.entities[:6]]
+        terms = [t for t in terms if t]
+        joined = " OR ".join(f'"{t}"' for t in terms)
+    else:
+        joined = _lexical_query(plan, query)
+        if not joined:
+            return [], "empty"
+        if LEXICAL_MODE == "full_bm25":
+            limit = 20
+    if not joined:
         return [], "empty"
-    joined = " OR ".join(f'"{t}"' for t in terms)
     try:
-        hits = store.fts_search(joined, limit=limit, timeline=plan.timeline)
+        hits = store.fts_search(joined, limit=limit, timeline=plan.timeline,
+                                rank=LEXICAL_MODE != "current",
+                                raw=LEXICAL_MODE != "current")
     except Exception as e:
         logger.warning("lexical search failed: %s", e)
         return [], "down"
     for h in hits:
         h["source"] = "fts"
     return hits, ("ok" if hits else "empty")
+
+
+def _lexical_query(plan: QueryPlan, query: str) -> str:
+    """Ranked-mode MATCH expression: entity phrases OR'd with the raw
+    query's content tokens. Entities carry proper names the tokenizer
+    would split ('Doctor Strange'); query tokens cover everything the
+    planner missed. Order-preserving dedup, capped to keep MATCH sane."""
+    terms: list[str] = []
+    for t in plan.entities[:6]:
+        safe = _fts_safe(t)
+        if safe and safe.lower() not in [x.lower() for x in terms]:
+            terms.append(safe)
+    for tok in re.findall(r"[a-z0-9'-]+", query.lower()):
+        if len(tok) > 2 and tok not in _STOPWORDS:
+            safe = _fts_safe(tok)
+            if safe and safe.lower() not in [x.lower() for x in terms]:
+                terms.append(safe)
+        if len(terms) >= 14:
+            break
+    return " OR ".join(f'"{t}"' for t in terms)
 
 
 def _fts_safe(term: str) -> str:
@@ -313,17 +362,14 @@ def _resolve_endpoint(s, entity: str, cap: int = 3) -> list[str]:
 # rerank
 # --------------------------------------------------------------------------
 
-def rerank(plan: QueryPlan, query: str, lex: list[dict], sem: list[dict],
-           graph_hits: list[dict]) -> dict[str, Any]:
-    """Combine scores: paths > grounded chunks > entity/event rows > lexical
-    only. Graph evidence informs, it never dominates — synthetic rows
-    (neighbor name lists, event names) are capped so grounded subtitle
-    passages hold the majority of the evidence the LLM sees (a 20-row
-    temporal walk once crowded 5 of 6 slots and hedged the flagship
-    answer)."""
-    combined: dict[str, dict] = {}
-    graph_rows: list[dict] = []
+_RRF_K = 60
 
+
+def _graph_rows(graph_hits: list[dict]) -> list[dict]:
+    """Graph evidence rows with the production fixed scores — synthetic rows
+    are capped (paths<=2, entities<=3) so grounded subtitle passages keep
+    the majority of the evidence the LLM sees (PRODUCT principle)."""
+    graph_rows: list[dict] = []
     for h in graph_hits:
         if "path" in h:
             graph_rows.append({
@@ -331,7 +377,6 @@ def rerank(plan: QueryPlan, query: str, lex: list[dict], sem: list[dict],
                 "entry": {"type": "path", "score": 0.95, "data": h},
             })
         elif h.get("label") == "Event" and ("date" in h or "precision" in h):
-            # temporal walk hits: event rows with real chronology behind them
             graph_rows.append({
                 "key": h["id"],
                 "entry": {"type": "entity", "score": 0.62, "data": h},
@@ -341,8 +386,125 @@ def rerank(plan: QueryPlan, query: str, lex: list[dict], sem: list[dict],
                 "key": h["id"],
                 "entry": {"type": "entity", "score": 0.55, "data": h},
             })
-
     graph_rows.sort(key=lambda r: -r["entry"]["score"])
+    return graph_rows
+
+
+def _mark_source(entry: dict, leg: str) -> None:
+    """Attribution truth: the status line names every leg that served the
+    chunk ('fts', 'vector', 'fts+vector')."""
+    data = entry["data"]
+    legs = entry.setdefault("_legs", [])
+    if leg not in legs:
+        legs.append(leg)
+    data["source"] = "+".join(legs) if legs else leg
+
+
+def _fuse_rrf(lex: list[dict], sem: list[dict]) -> list[dict]:
+    """Reciprocal Rank Fusion: each leg votes 1/(k+rank); no score-scale
+    guessing between cosine and bm25."""
+    out: dict[str, dict] = {}
+    for leg, hits in (("vector", sem), ("fts", lex)):
+        for i, h in enumerate(hits, 1):
+            cid = h.get("chunk_id")
+            if not cid:
+                continue
+            e = out.setdefault(cid, {"key": cid, "type": "chunk",
+                                     "score": 0.0, "data": dict(h)})
+            e["score"] += 1.0 / (_RRF_K + i)
+            e["data"].setdefault("title", h.get("title"))
+            _mark_source(e, leg)
+            if leg == "fts" and h.get("bm25") is not None:
+                e["data"]["bm25"] = h["bm25"]
+    return sorted(out.values(), key=lambda x: -x["score"])
+
+
+def _fuse_weighted(lex: list[dict], sem: list[dict]) -> list[dict]:
+    """Linear blend: alpha*cosine + (1-alpha)*minmax(bm25). Cosine is
+    already 0..1; bm25 is minmax-normalized within the leg's hit set
+    (rank-decay fallback when bm25 is absent)."""
+    out: dict[str, dict] = {}
+    bm = [h["bm25"] for h in lex if h.get("bm25") is not None]
+    lo, hi = (min(bm), max(bm)) if bm else (0.0, 0.0)
+
+    def lex_norm(h: dict, i: int) -> float:
+        if h.get("bm25") is not None and hi > lo:
+            return (h["bm25"] - lo) / (hi - lo)
+        return (len(lex) - i) / max(len(lex), 1)
+
+    for h in sem:
+        cid = h.get("chunk_id")
+        if not cid:
+            continue
+        e = {"key": cid, "type": "chunk",
+             "score": FUSION_ALPHA * h.get("score", 0.0), "data": dict(h)}
+        _mark_source(e, "vector")
+        out[cid] = e
+    for i, h in enumerate(lex):
+        cid = h.get("chunk_id")
+        if not cid:
+            continue
+        contrib = (1 - FUSION_ALPHA) * lex_norm(h, i)
+        e = out.get(cid)
+        if e:
+            e["score"] += contrib
+            if h.get("bm25") is not None:
+                e["data"]["bm25"] = h["bm25"]
+            _mark_source(e, "fts")
+        else:
+            e = {"key": cid, "type": "chunk", "score": contrib, "data": dict(h)}
+            _mark_source(e, "fts")
+            out[cid] = e
+    return sorted(out.values(), key=lambda x: -x["score"])
+
+
+def _rerank_fused(plan: QueryPlan, query: str, lex: list[dict], sem: list[dict],
+                  graph_hits: list[dict]) -> dict[str, Any]:
+    """Fused ranking: graph rows keep their fixed scores and caps; chunks
+    are scored by fusion (rrf/weighted) and optionally re-scored by a
+    cross-encoder (MM_EVAL_RERANKER) before the final merge."""
+    combined: dict[str, dict] = {}
+    graph_rows = _graph_rows(graph_hits)
+    paths = [r for r in graph_rows if r["entry"]["type"] == "path"][:2]
+    entities = [r for r in graph_rows if r["entry"]["type"] == "entity"][:3]
+    for r in paths + entities:
+        combined[r["key"]] = r["entry"]
+
+    chunks = (_fuse_weighted(lex, sem) if FUSION_MODE == "weighted"
+              else _fuse_rrf(lex, sem))
+    if RERANKER != "none":
+        from src.search.rerank import cross_encoder_scores
+
+        top = chunks[:24]
+        for c, s in zip(top, cross_encoder_scores(query, [c["data"]["text"] for c in top])):
+            c["score"] = s
+        chunks = sorted(chunks, key=lambda c: -c["score"])
+    for c in chunks:
+        combined.setdefault(c["key"], c)
+
+    ranked = sorted(combined.values(), key=lambda x: -x["score"])
+    return {
+        "plan": plan.model_dump(),
+        "results": ranked[:20],
+    }
+
+
+def rerank(plan: QueryPlan, query: str, lex: list[dict], sem: list[dict],
+           graph_hits: list[dict]) -> dict[str, Any]:
+    """Combine scores: paths > grounded chunks > entity/event rows > lexical
+    only. Graph evidence informs, it never dominates — synthetic rows
+    (neighbor name lists, event names) are capped so grounded subtitle
+    passages hold the majority of the evidence the LLM sees (a 20-row
+    temporal walk once crowded 5 of 6 slots and hedged the flagship
+    answer).
+
+    MM_EVAL_FUSION=rrf|weighted (optionally MM_EVAL_RERANKER) switches to
+    score-aware fusion — the current mode keeps the legacy fixed scores."""
+    if FUSION_MODE in ("rrf", "weighted") or RERANKER != "none":
+        return _rerank_fused(plan, query, lex, sem, graph_hits)
+
+    combined: dict[str, dict] = {}
+    graph_rows = _graph_rows(graph_hits)
     paths = [r for r in graph_rows if r["entry"]["type"] == "path"][:2]
     entities = [r for r in graph_rows if r["entry"]["type"] == "entity"][:3]
     for r in paths + entities:

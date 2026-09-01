@@ -147,25 +147,34 @@ class Store:
             '"' + t.replace('"', "") + '"' for t in query.split() if t.strip()
         )
 
-    def fts_search(self, query: str, limit: int = 20, timeline: str | None = None) -> list[dict]:
-        """FTS5 lexical search; timeline filter enforces scope truthfully."""
-        match = self._fts_match(query)
+    def fts_search(self, query: str, limit: int = 20, timeline: str | None = None,
+                   rank: bool = False, raw: bool = False) -> list[dict]:
+        """FTS5 lexical search; timeline filter enforces scope truthfully.
+        rank=True orders by bm25 (relevance instead of rowid order) and
+        attaches a `bm25` score — higher = better (negated FTS5 bm25).
+        raw=True trusts a caller-built MATCH expression (hybrid's quoted
+        terms) — _fts_match would re-quote the quotes and destroy the ORs."""
+        match = query if raw else self._fts_match(query)
         if not match:
             return []
-        sql = """SELECT f.chunk_id, f.document_id, f.text, d.title, d.timeline_id
+        cols = "f.chunk_id, f.document_id, f.text, d.title, d.timeline_id"
+        if rank:
+            cols += ", -bm25(chunks_fts) AS bm25"
+        sql = f"""SELECT {cols}
                  FROM chunks_fts f JOIN documents d ON d.document_id = f.document_id
                  WHERE chunks_fts MATCH ?"""
         params: list = [match]
         if timeline:
             sql += " AND d.timeline_id = ?"
             params.append(timeline)
-        sql += " LIMIT ?"
+        if rank:
+            sql += " ORDER BY bm25 DESC LIMIT ?"  # bm25 alias is negated: higher = better
+        else:
+            sql += " LIMIT ?"
         params.append(limit)
         rows = self._execute(sql, params)
-        return [
-            {"chunk_id": r[0], "document_id": r[1], "text": r[2], "title": r[3], "timeline_id": r[4]}
-            for r in rows
-        ]
+        keys = ["chunk_id", "document_id", "text", "title", "timeline_id"] + (["bm25"] if rank else [])
+        return [dict(zip(keys, r)) for r in rows]
 
     def get_chunk(self, chunk_id: str) -> dict | None:
         rows = self._execute(
@@ -175,6 +184,21 @@ class Store:
             return None
         r = rows[0]
         return {"chunk_id": r[0], "document_id": r[1], "text": r[2]}
+
+    def get_chunk_times(self, chunk_id: str) -> dict | None:
+        """Source coordinates in seconds — lets the retrieval eval match
+        golden cue windows against retrieved chunks without re-parsing."""
+        rows = self._execute(
+            "SELECT document_id, start_ms, end_ms FROM chunks WHERE chunk_id = ?",
+            (chunk_id,),
+        )
+        if not rows:
+            return None
+        return {
+            "document_id": rows[0][0],
+            "start_s": rows[0][1] / 1000.0,
+            "end_s": rows[0][2] / 1000.0,
+        }
 
     def get_document(self, document_id: str) -> dict | None:
         rows = self._execute(

@@ -111,7 +111,7 @@ def test_rerank_path_results_top() -> None:
 
 def _fake_store(hits=None, fail=False):
     class FakeStore:
-        def fts_search(self, query, limit=20, timeline=None):
+        def fts_search(self, query, limit=20, timeline=None, rank=False, raw=False):
             if fail:
                 raise RuntimeError("lexical store down")
             return hits if hits is not None else []
@@ -149,7 +149,7 @@ def test_lexical_scope_passed_through() -> None:
     seen = {}
 
     class SpyStore:
-        def fts_search(self, query, limit=20, timeline=None):
+        def fts_search(self, query, limit=20, timeline=None, rank=False, raw=False):
             seen["timeline"] = timeline
             return []
 

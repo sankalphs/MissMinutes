@@ -1,0 +1,1639 @@
+{
+ "meta": {
+  "built": "2026-09-02",
+  "seed": 20260902,
+  "docs": 493,
+  "chunks": 83628,
+  "model": "MiniMaxAI/MiniMax-M3"
+ },
+ "cases": [
+  {
+   "id": "doc:jessica_jones_2015_s02e10#q1",
+   "kind": "chunk",
+   "q": "Who refused to talk when shown Karl's picture in this scene?",
+   "document_id": "doc:jessica_jones_2015_s02e10",
+   "chunk_id": "doc:jessica_jones_2015_s02e10#s0062c00644",
+   "window": [
+    2833.497,
+    2843.007
+   ],
+   "ext_window": [
+    2819.734,
+    2846.177
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:jessica_jones_2015_s02e10#q2",
+   "kind": "chunk",
+   "q": "What kind of motel is mentioned where the events stay private?",
+   "document_id": "doc:jessica_jones_2015_s02e10",
+   "chunk_id": "doc:jessica_jones_2015_s02e10#s0000c00006",
+   "window": [
+    172.672,
+    180.806
+   ],
+   "ext_window": [
+    172.589,
+    189.523
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:runaways_2017_s01e04#q1",
+   "kind": "chunk",
+   "q": "What does the bracelet do that the mother didn't want removed?",
+   "document_id": "doc:runaways_2017_s01e04",
+   "chunk_id": "doc:runaways_2017_s01e04#s0053c00560",
+   "window": [
+    2198.5,
+    2207.636
+   ],
+   "ext_window": [
+    2190.144,
+    2215.948
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:runaways_2017_s01e04#q2",
+   "kind": "chunk",
+   "q": "Does anyone else at the church have a glowing ability?",
+   "document_id": "doc:runaways_2017_s01e04",
+   "chunk_id": "doc:runaways_2017_s01e04#s0067c00644",
+   "window": [
+    2575.05,
+    2592.105
+   ],
+   "ext_window": [
+    2575.009,
+    2604.124
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:agents_of_shield_2013_s02e19#q1",
+   "kind": "chunk",
+   "q": "Who pulled a character off Ward after an attack on the Quinjet?",
+   "document_id": "doc:agents_of_shield_2013_s02e19",
+   "chunk_id": "doc:agents_of_shield_2013_s02e19#s0011c00202",
+   "window": [
+    739.581,
+    752.293
+   ],
+   "ext_window": [
+    739.547,
+    772.046
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:agents_of_shield_2013_s02e19#q2",
+   "kind": "chunk",
+   "q": "Why was it considered too dangerous for Ward to go on a mission?",
+   "document_id": "doc:agents_of_shield_2013_s02e19",
+   "chunk_id": "doc:agents_of_shield_2013_s02e19#s0011c00225",
+   "window": [
+    807.882,
+    818.525
+   ],
+   "ext_window": [
+    807.848,
+    833.273
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:helstrom_2020_s01e04#q1",
+   "kind": "chunk",
+   "q": "In the conversation, who is described as normally getting rid of bodies?",
+   "document_id": "doc:helstrom_2020_s01e04",
+   "chunk_id": "doc:helstrom_2020_s01e04#s0069c00558",
+   "window": [
+    2478.729,
+    2496.914
+   ],
+   "ext_window": [
+    2464.84,
+    2501.585
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:helstrom_2020_s01e04#q2",
+   "kind": "chunk",
+   "q": "Where do they suggest dumping the body instead?",
+   "document_id": "doc:helstrom_2020_s01e04",
+   "chunk_id": "doc:helstrom_2020_s01e04#s0053c00456",
+   "window": [
+    2043.877,
+    2065.065
+   ],
+   "ext_window": [
+    2043.853,
+    2072.947
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:agents_of_shield_2013_s06e05#q1",
+   "kind": "chunk",
+   "q": "What does the speaker call the cheater in the subtitle, a synth or a shape-shifter?",
+   "document_id": "doc:agents_of_shield_2013_s06e05",
+   "chunk_id": "doc:agents_of_shield_2013_s06e05#s0027c00360",
+   "window": [
+    1019.422,
+    1045.319
+   ],
+   "ext_window": [
+    1019.08,
+    1060.58
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:agents_of_shield_2013_s06e05#q2",
+   "kind": "chunk",
+   "q": "Who does the speaker threaten to kill slowly, promising it will hurt?",
+   "document_id": "doc:agents_of_shield_2013_s06e05",
+   "chunk_id": "doc:agents_of_shield_2013_s06e05#s0040c00609",
+   "window": [
+    1769.372,
+    1788.511
+   ],
+   "ext_window": [
+    1769.285,
+    1809.476
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:cloak_and_dagger_2018_s01e07#q1",
+   "kind": "chunk",
+   "q": "What question does one character answer with another question in this scene?",
+   "document_id": "doc:cloak_and_dagger_2018_s01e07",
+   "chunk_id": "doc:cloak_and_dagger_2018_s01e07#s0035c00427",
+   "window": [
+    1420.853,
+    1437.522
+   ],
+   "ext_window": [
+    1414.813,
+    1458.603
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:cloak_and_dagger_2018_s01e07#q2",
+   "kind": "chunk",
+   "q": "Which character forgets the name of someone named Tandy?",
+   "document_id": "doc:cloak_and_dagger_2018_s01e07",
+   "chunk_id": "doc:cloak_and_dagger_2018_s01e07#s0026c00354",
+   "window": [
+    1131.396,
+    1139.76
+   ],
+   "ext_window": [
+    1131.395,
+    1150.343
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:inhumans_2017_s01e07#q1",
+   "kind": "chunk",
+   "q": "What larger truth does the speaker say is being ignored?",
+   "document_id": "doc:inhumans_2017_s01e07",
+   "chunk_id": "doc:inhumans_2017_s01e07#s0036c00518",
+   "window": [
+    1525.04,
+    1540.79
+   ],
+   "ext_window": [
+    1503.46,
+    1579.21
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:inhumans_2017_s01e07#q2",
+   "kind": "chunk",
+   "q": "Who does the speaker address and apologize to?",
+   "document_id": "doc:inhumans_2017_s01e07",
+   "chunk_id": "doc:inhumans_2017_s01e07#s0027c00344",
+   "window": [
+    987.54,
+    1003.17
+   ],
+   "ext_window": [
+    986.54,
+    1009.96
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:agents_of_shield_2013_s01e16#q1",
+   "kind": "chunk",
+   "q": "Who is ordered to stay six feet from Skye with weapons ready?",
+   "document_id": "doc:agents_of_shield_2013_s01e16",
+   "chunk_id": "doc:agents_of_shield_2013_s01e16#s0022c00379",
+   "window": [
+    1284.492,
+    1293.668
+   ],
+   "ext_window": [
+    1284.409,
+    1300.883
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:agents_of_shield_2013_s01e16#q2",
+   "kind": "chunk",
+   "q": "Where is Skye told to run a back end from?",
+   "document_id": "doc:agents_of_shield_2013_s01e16",
+   "chunk_id": "doc:agents_of_shield_2013_s01e16#s0004c00102",
+   "window": [
+    303.137,
+    314.398
+   ],
+   "ext_window": [
+    302.886,
+    326.201
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:iron_fist_2017_s02e04#q1",
+   "kind": "chunk",
+   "q": "What did the speaker do instead of attending a dinner they were supposed to go to?",
+   "document_id": "doc:iron_fist_2017_s02e04",
+   "chunk_id": "doc:iron_fist_2017_s02e04#s0007c00087",
+   "window": [
+    477.226,
+    499.749
+   ],
+   "ext_window": [
+    477.143,
+    521.102
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:iron_fist_2017_s02e04#q2",
+   "kind": "chunk",
+   "q": "What kind of taxi did the speaker take to get to a sports bar on 2nd Avenue?",
+   "document_id": "doc:iron_fist_2017_s02e04",
+   "chunk_id": "doc:iron_fist_2017_s02e04#s0002c00023",
+   "window": [
+    207.373,
+    219.844
+   ],
+   "ext_window": [
+    207.29,
+    228.144
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:the_defenders_2017_s01e07#q1",
+   "kind": "chunk",
+   "q": "How does the character know how to seal the mysterious object?",
+   "document_id": "doc:the_defenders_2017_s01e07",
+   "chunk_id": "doc:the_defenders_2017_s01e07#s0028c00331",
+   "window": [
+    1487.11,
+    1507.338
+   ],
+   "ext_window": [
+    1484.608,
+    1512.302
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:the_defenders_2017_s01e07#q2",
+   "kind": "chunk",
+   "q": "Why is the character unable to read the object they are looking at?",
+   "document_id": "doc:the_defenders_2017_s01e07",
+   "chunk_id": "doc:the_defenders_2017_s01e07#s0024c00306",
+   "window": [
+    1377.709,
+    1391.807
+   ],
+   "ext_window": [
+    1377.626,
+    1423.213
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:iron_fist_2017_s02e09#q1",
+   "kind": "chunk",
+   "q": "What is the name of the story mentioned about the Pirate Queen?",
+   "document_id": "doc:iron_fist_2017_s02e09",
+   "chunk_id": "doc:iron_fist_2017_s02e09#s0006c00185",
+   "window": [
+    830.83,
+    848.973
+   ],
+   "ext_window": [
+    830.746,
+    856.188
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:iron_fist_2017_s02e09#q2",
+   "kind": "chunk",
+   "q": "What did the speaker describe as legendary and priceless in the ship takeover?",
+   "document_id": "doc:iron_fist_2017_s02e09",
+   "chunk_id": "doc:iron_fist_2017_s02e09#s0011c00230",
+   "window": [
+    1030.612,
+    1045.752
+   ],
+   "ext_window": [
+    1013.554,
+    1058.724
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:iron_fist_2017_s02e07#q1",
+   "kind": "chunk",
+   "q": "What reassurance does someone give a worried companion about dying?",
+   "document_id": "doc:iron_fist_2017_s02e07",
+   "chunk_id": "doc:iron_fist_2017_s02e07#s0009c00137",
+   "window": [
+    669.085,
+    691.148
+   ],
+   "ext_window": [
+    663.913,
+    705.538
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:iron_fist_2017_s02e07#q2",
+   "kind": "chunk",
+   "q": "What phrase is used to describe the group of fighters as a collective force?",
+   "document_id": "doc:iron_fist_2017_s02e07",
+   "chunk_id": "doc:iron_fist_2017_s02e07#s0007c00124",
+   "window": [
+    591.841,
+    609.859
+   ],
+   "ext_window": [
+    591.173,
+    625.333
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:luke_cage_2016_s01e03#q1",
+   "kind": "chunk",
+   "q": "Who inspired the speaker to play basketball in this scene?",
+   "document_id": "doc:luke_cage_2016_s01e03",
+   "chunk_id": "doc:luke_cage_2016_s01e03#s0028c00359",
+   "window": [
+    1703.785,
+    1715.214
+   ],
+   "ext_window": [
+    1703.702,
+    1728.685
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:luke_cage_2016_s01e03#q2",
+   "kind": "chunk",
+   "q": "Where did the speaker's father used to take him as a child?",
+   "document_id": "doc:luke_cage_2016_s01e03",
+   "chunk_id": "doc:luke_cage_2016_s01e03#s0008c00105",
+   "window": [
+    603.269,
+    614.114
+   ],
+   "ext_window": [
+    603.186,
+    632.59
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:cloak_and_dagger_2018_s02e01#q1",
+   "kind": "chunk",
+   "q": "Who has been practicing in Cloak & Dagger and shows off their new skills?",
+   "document_id": "doc:cloak_and_dagger_2018_s02e01",
+   "chunk_id": "doc:cloak_and_dagger_2018_s02e01#s0014c00282",
+   "window": [
+    841.17,
+    856.33
+   ],
+   "ext_window": [
+    815.5,
+    871.54
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:cloak_and_dagger_2018_s02e01#q2",
+   "kind": "chunk",
+   "q": "Why does the practicing character's friend suggest they hit up their girl?",
+   "document_id": "doc:cloak_and_dagger_2018_s02e01",
+   "chunk_id": "doc:cloak_and_dagger_2018_s02e01#s0039c00673",
+   "window": [
+    2096.08,
+    2115.92
+   ],
+   "ext_window": [
+    2093.96,
+    2147.0
+   ],
+   "timeline": "defenders",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:loki_2021_s02e03#q1",
+   "kind": "chunk",
+   "q": "Who stayed by Loki's side through the war and the TVA and eons after?",
+   "document_id": "doc:loki_2021_s02e03",
+   "chunk_id": "doc:loki_2021_s02e03#s0052c00620",
+   "window": [
+    2409.292,
+    2430.375
+   ],
+   "ext_window": [
+    2408.792,
+    2457.167
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:loki_2021_s02e03#q2",
+   "kind": "chunk",
+   "q": "What nightly activity did Loki and his loyal companion share together?",
+   "document_id": "doc:loki_2021_s02e03",
+   "chunk_id": "doc:loki_2021_s02e03#s0035c00479",
+   "window": [
+    1766.167,
+    1783.958
+   ],
+   "ext_window": [
+    1766.083,
+    1809.917
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:ironheart_2025_s01e01#q1",
+   "kind": "chunk",
+   "q": "Who asks someone to convince a board to extend their grant in this scene?",
+   "document_id": "doc:ironheart_2025_s01e01",
+   "chunk_id": "doc:ironheart_2025_s01e01#s0002c00038",
+   "window": [
+    141.125,
+    161.582
+   ],
+   "ext_window": [
+    132.541,
+    166.125
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:ironheart_2025_s01e01#q2",
+   "kind": "chunk",
+   "q": "What research or idea is the speaker trying to get off the ground?",
+   "document_id": "doc:ironheart_2025_s01e01",
+   "chunk_id": "doc:ironheart_2025_s01e01#s0014c00144",
+   "window": [
+    535.167,
+    543.375
+   ],
+   "ext_window": [
+    518.417,
+    545.875
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:the_falcon_and_the_winter_soldier_2021_s01e06#q1",
+   "kind": "chunk",
+   "q": "What labels are mentioned for people forced into settlements in this scene?",
+   "document_id": "doc:the_falcon_and_the_winter_soldier_2021_s01e06",
+   "chunk_id": "doc:the_falcon_and_the_winter_soldier_2021_s01e06#s0052c00223",
+   "window": [
+    1669.0,
+    1680.5
+   ],
+   "ext_window": [
+    1668.917,
+    1697.458
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:the_falcon_and_the_winter_soldier_2021_s01e06#q2",
+   "kind": "chunk",
+   "q": "What term is used in the dialogue alongside 'terrorists' and 'thug'?",
+   "document_id": "doc:the_falcon_and_the_winter_soldier_2021_s01e06",
+   "chunk_id": "doc:the_falcon_and_the_winter_soldier_2021_s01e06#s0021c00103",
+   "window": [
+    606.5,
+    616.458
+   ],
+   "ext_window": [
+    591.083,
+    631.708
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:eternals_2021#q1",
+   "kind": "chunk",
+   "q": "Which Eternals character was told they were on a suicide mission?",
+   "document_id": "doc:eternals_2021",
+   "chunk_id": "doc:eternals_2021#s0098c00879",
+   "window": [
+    4047.548,
+    4058.393
+   ],
+   "ext_window": [
+    4047.465,
+    4068.403
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:eternals_2021#q2",
+   "kind": "chunk",
+   "q": "How many years has Druig been told he was on a suicide mission?",
+   "document_id": "doc:eternals_2021",
+   "chunk_id": "doc:eternals_2021#s0094c00811",
+   "window": [
+    3832.5,
+    3848.6
+   ],
+   "ext_window": [
+    3832.333,
+    3868.995
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:eternals_2021#qdoc",
+   "kind": "doc",
+   "q": "Which Marvel movie features a group debating whether to save Earth from a Celestial?",
+   "document_id": "doc:eternals_2021",
+   "chunk_id": null,
+   "window": null,
+   "ext_window": null,
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:thor_ragnarok_2017#q1",
+   "kind": "chunk",
+   "q": "Who is gaining power from Asgard and growing stronger each day?",
+   "document_id": "doc:thor_ragnarok_2017",
+   "chunk_id": "doc:thor_ragnarok_2017#s0115c00828",
+   "window": [
+    4037.825,
+    4055.01
+   ],
+   "ext_window": [
+    4037.664,
+    4064.189
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:thor_ragnarok_2017#q2",
+   "kind": "chunk",
+   "q": "What is Hela starving for if Asgard's people choose to stay?",
+   "document_id": "doc:thor_ragnarok_2017",
+   "chunk_id": "doc:thor_ragnarok_2017#s0065c00552",
+   "window": [
+    2621.285,
+    2638.978
+   ],
+   "ext_window": [
+    2601.933,
+    2650.398
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:thor_ragnarok_2017#qdoc",
+   "kind": "doc",
+   "q": "Which Marvel film features Hela destroying Asgard and the destruction of Mjolnir?",
+   "document_id": "doc:thor_ragnarok_2017",
+   "chunk_id": null,
+   "window": null,
+   "ext_window": null,
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:guardians_of_the_galaxy_2014#q1",
+   "kind": "chunk",
+   "q": "Who calls their group of friends 'losers' before meeting Yondu?",
+   "document_id": "doc:guardians_of_the_galaxy_2014",
+   "chunk_id": "doc:guardians_of_the_galaxy_2014#s0108c01089",
+   "window": [
+    4625.403,
+    4648.203
+   ],
+   "ext_window": [
+    4620.363,
+    4665.363
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:guardians_of_the_galaxy_2014#q2",
+   "kind": "chunk",
+   "q": "How much time does Yondu have before he arrives in the scene?",
+   "document_id": "doc:guardians_of_the_galaxy_2014",
+   "chunk_id": "doc:guardians_of_the_galaxy_2014#s0008c00087",
+   "window": [
+    756.843,
+    765.123
+   ],
+   "ext_window": [
+    756.563,
+    779.563
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:guardians_of_the_galaxy_2014#qdoc",
+   "kind": "doc",
+   "q": "Which Marvel film features a scene where someone complains that a boy should have been handed over as cargo?",
+   "document_id": "doc:guardians_of_the_galaxy_2014",
+   "chunk_id": null,
+   "window": null,
+   "ext_window": null,
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:agatha_all_along_2024_s01e06#q1",
+   "kind": "chunk",
+   "q": "Who calls someone disgusting after a heartfelt declaration of love in this scene?",
+   "document_id": "doc:agatha_all_along_2024_s01e06",
+   "chunk_id": "doc:agatha_all_along_2024_s01e06#s0003c00029",
+   "window": [
+    206.166,
+    224.5
+   ],
+   "ext_window": [
+    203.333,
+    282.958
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:agatha_all_along_2024_s01e06#q2",
+   "kind": "chunk",
+   "q": "What character's name is called out as it's time to leave?",
+   "document_id": "doc:agatha_all_along_2024_s01e06",
+   "chunk_id": "doc:agatha_all_along_2024_s01e06#s0001c00006",
+   "window": [
+    30.416,
+    42.5
+   ],
+   "ext_window": [
+    23.708,
+    62.708
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:secret_invasion_2023_s01e05#q1",
+   "kind": "chunk",
+   "q": "Who threatens to out Nick Fury by confronting him near the President?",
+   "document_id": "doc:secret_invasion_2023_s01e05",
+   "chunk_id": "doc:secret_invasion_2023_s01e05#s0007c00086",
+   "window": [
+    358.458,
+    375.291
+   ],
+   "ext_window": [
+    358.375,
+    389.458
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:secret_invasion_2023_s01e05#q2",
+   "kind": "chunk",
+   "q": "What weapon is mentioned as being pulled but not used in the threat?",
+   "document_id": "doc:secret_invasion_2023_s01e05",
+   "chunk_id": "doc:secret_invasion_2023_s01e05#s0036c00315",
+   "window": [
+    1746.583,
+    1759.375
+   ],
+   "ext_window": [
+    1732.291,
+    1774.375
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:agatha_all_along_2024_s01e08#q1",
+   "kind": "chunk",
+   "q": "Who tells Vision they have said goodbye before in this scene?",
+   "document_id": "doc:agatha_all_along_2024_s01e08",
+   "chunk_id": "doc:agatha_all_along_2024_s01e08#s0041c00273",
+   "window": [
+    1300.958,
+    1316.458
+   ],
+   "ext_window": [
+    1292.208,
+    1319.5
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:agatha_all_along_2024_s01e08#q2",
+   "kind": "chunk",
+   "q": "What sound is described as stopping because everything else does?",
+   "document_id": "doc:agatha_all_along_2024_s01e08",
+   "chunk_id": "doc:agatha_all_along_2024_s01e08#s0032c00177",
+   "window": [
+    940.708,
+    955.125
+   ],
+   "ext_window": [
+    935.167,
+    972.417
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:ironheart_2025_s01e02#q1",
+   "kind": "chunk",
+   "q": "What did the person claim to have brought into the bunker?",
+   "document_id": "doc:ironheart_2025_s01e02",
+   "chunk_id": "doc:ironheart_2025_s01e02#s0024c00421",
+   "window": [
+    1474.875,
+    1484.75
+   ],
+   "ext_window": [
+    1468.583,
+    1495.125
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:ironheart_2025_s01e02#q2",
+   "kind": "chunk",
+   "q": "Who objects to holding something and says they shouldn't do it?",
+   "document_id": "doc:ironheart_2025_s01e02",
+   "chunk_id": "doc:ironheart_2025_s01e02#s0007c00110",
+   "window": [
+    374.417,
+    391.207
+   ],
+   "ext_window": [
+    365.875,
+    401.416
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:hawkeye_2021_s01e04#q1",
+   "kind": "chunk",
+   "q": "What nickname does the kid have that the speakers are discussing?",
+   "document_id": "doc:hawkeye_2021_s01e04",
+   "chunk_id": "doc:hawkeye_2021_s01e04#s0013c00194",
+   "window": [
+    691.458,
+    701.166
+   ],
+   "ext_window": [
+    690.125,
+    717.958
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:hawkeye_2021_s01e04#q2",
+   "kind": "chunk",
+   "q": "Who says the kid has good instincts in that conversation?",
+   "document_id": "doc:hawkeye_2021_s01e04",
+   "chunk_id": "doc:hawkeye_2021_s01e04#s0037c00525",
+   "window": [
+    1762.25,
+    1782.333
+   ],
+   "ext_window": [
+    1754.125,
+    1793.416
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:ms_marvel_2022_s01e05#q1",
+   "kind": "chunk",
+   "q": "What poem does the character recite while looking at the roses?",
+   "document_id": "doc:ms_marvel_2022_s01e05",
+   "chunk_id": "doc:ms_marvel_2022_s01e05#s0012c00071",
+   "window": [
+    409.807,
+    430.302
+   ],
+   "ext_window": [
+    405.14,
+    446.807
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:ms_marvel_2022_s01e05#q2",
+   "kind": "chunk",
+   "q": "Which lines from a poem are quoted about the soul lying in grass?",
+   "document_id": "doc:ms_marvel_2022_s01e05",
+   "chunk_id": "doc:ms_marvel_2022_s01e05#s0057c00281",
+   "window": [
+    1662.724,
+    1685.932
+   ],
+   "ext_window": [
+    1652.474,
+    1692.265
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:captain_america_brave_new_world_2025#q1",
+   "kind": "chunk",
+   "q": "Who sent the orders about the secret package the Serpent mercenaries are delivering?",
+   "document_id": "doc:captain_america_brave_new_world_2025",
+   "chunk_id": "doc:captain_america_brave_new_world_2025#s0003c00042",
+   "window": [
+    218.635,
+    228.143
+   ],
+   "ext_window": [
+    211.251,
+    243.408
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:captain_america_brave_new_world_2025#q2",
+   "kind": "chunk",
+   "q": "When are the Serpent mercenaries supposed to hand over their package to the buyer?",
+   "document_id": "doc:captain_america_brave_new_world_2025",
+   "chunk_id": "doc:captain_america_brave_new_world_2025#s0035c00324",
+   "window": [
+    1209.75,
+    1226.474
+   ],
+   "ext_window": [
+    1209.665,
+    1232.772
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:captain_america_brave_new_world_2025#qdoc",
+   "kind": "doc",
+   "q": "Which Marvel film features a character being recruited because of her empowered abilities and results?",
+   "document_id": "doc:captain_america_brave_new_world_2025",
+   "chunk_id": null,
+   "window": null,
+   "ext_window": null,
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:ms_marvel_2022_s01e04#q1",
+   "kind": "chunk",
+   "q": "What snack does the mother offer to her child when they come home?",
+   "document_id": "doc:ms_marvel_2022_s01e04",
+   "chunk_id": "doc:ms_marvel_2022_s01e04#s0055c00329",
+   "window": [
+    1842.025,
+    1868.65
+   ],
+   "ext_window": [
+    1828.816,
+    1876.9
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:ms_marvel_2022_s01e04#q2",
+   "kind": "chunk",
+   "q": "What term does the child use to address their mother in the dialogue?",
+   "document_id": "doc:ms_marvel_2022_s01e04",
+   "chunk_id": "doc:ms_marvel_2022_s01e04#s0001c00008",
+   "window": [
+    23.733,
+    32.5
+   ],
+   "ext_window": [
+    23.728,
+    44.228
+   ],
+   "timeline": "mcu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:what_if_2021_s01e08#q1",
+   "kind": "chunk",
+   "q": "Who tells Hawkeye that secrets were Russia's national pastime?",
+   "document_id": "doc:what_if_2021_s01e08",
+   "chunk_id": "doc:what_if_2021_s01e08#s0006c00032",
+   "window": [
+    251.833,
+    262.791
+   ],
+   "ext_window": [
+    251.75,
+    279.208
+   ],
+   "timeline": "whatif",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:what_if_2021_s01e08#q2",
+   "kind": "chunk",
+   "q": "What vision did one man have that began the end of the world?",
+   "document_id": "doc:what_if_2021_s01e08",
+   "chunk_id": "doc:what_if_2021_s01e08#s0007c00051",
+   "window": [
+    314.125,
+    326.833
+   ],
+   "ext_window": [
+    310.101,
+    346.791
+   ],
+   "timeline": "whatif",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:what_if_2021_s02e02#q1",
+   "kind": "chunk",
+   "q": "Why is Ant-Man stranded on a ship without a tape deck?",
+   "document_id": "doc:what_if_2021_s02e02",
+   "chunk_id": "doc:what_if_2021_s02e02#s0023c00208",
+   "window": [
+    824.474,
+    842.208
+   ],
+   "ext_window": [
+    824.449,
+    847.291
+   ],
+   "timeline": "whatif",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:what_if_2021_s02e02#q2",
+   "kind": "chunk",
+   "q": "What is Ant-Man looking for after the security breach?",
+   "document_id": "doc:what_if_2021_s02e02",
+   "chunk_id": "doc:what_if_2021_s02e02#s0009c00087",
+   "window": [
+    363.666,
+    371.641
+   ],
+   "ext_window": [
+    363.641,
+    381.775
+   ],
+   "timeline": "whatif",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:what_if_2021_s02e05#q1",
+   "kind": "chunk",
+   "q": "What did the Red Room do to the speaker in this scene?",
+   "document_id": "doc:what_if_2021_s02e05",
+   "chunk_id": "doc:what_if_2021_s02e05#s0024c00225",
+   "window": [
+    807.966,
+    817.674
+   ],
+   "ext_window": [
+    807.508,
+    831.174
+   ],
+   "timeline": "whatif",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:what_if_2021_s02e05#q2",
+   "kind": "chunk",
+   "q": "What unusual freezing method is mocked in this dialogue?",
+   "document_id": "doc:what_if_2021_s02e05",
+   "chunk_id": "doc:what_if_2021_s02e05#s0012c00107",
+   "window": [
+    414.341,
+    428.8
+   ],
+   "ext_window": [
+    414.257,
+    440.299
+   ],
+   "timeline": "whatif",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:what_if_2021_s03e07#q1",
+   "kind": "chunk",
+   "q": "Who intervened to stop the person being described in this quote?",
+   "document_id": "doc:what_if_2021_s03e07",
+   "chunk_id": "doc:what_if_2021_s03e07#s0036c00234",
+   "window": [
+    1202.291,
+    1216.708
+   ],
+   "ext_window": [
+    1202.29,
+    1232.75
+   ],
+   "timeline": "whatif",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:what_if_2021_s03e07#q2",
+   "kind": "chunk",
+   "q": "What was the speaker originally programmed to believe about peace?",
+   "document_id": "doc:what_if_2021_s03e07",
+   "chunk_id": "doc:what_if_2021_s03e07#s0022c00156",
+   "window": [
+    741.666,
+    750.374
+   ],
+   "ext_window": [
+    741.665,
+    761.957
+   ],
+   "timeline": "whatif",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:what_if_2021_s01e04#q1",
+   "kind": "chunk",
+   "q": "Who is on the wrong path that someone fears intervening could endanger other universes?",
+   "document_id": "doc:what_if_2021_s01e04",
+   "chunk_id": "doc:what_if_2021_s01e04#s0029c00205",
+   "window": [
+    1042.91,
+    1061.202
+   ],
+   "ext_window": [
+    1014.742,
+    1088.453
+   ],
+   "timeline": "whatif",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:what_if_2021_s01e04#q2",
+   "kind": "chunk",
+   "q": "What does the character doubt about the person on the wrong path?",
+   "document_id": "doc:what_if_2021_s01e04",
+   "chunk_id": "doc:what_if_2021_s01e04#s0016c00133",
+   "window": [
+    645.564,
+    658.69
+   ],
+   "ext_window": [
+    645.481,
+    671.732
+   ],
+   "timeline": "whatif",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:what_if_2021_s02e03#q2",
+   "kind": "chunk",
+   "q": "What did the character beg his parents and Santa for in that scene?",
+   "document_id": "doc:what_if_2021_s02e03",
+   "chunk_id": "doc:what_if_2021_s02e03#s0017c00352",
+   "window": [
+    1011.0,
+    1025.977
+   ],
+   "ext_window": [
+    1010.999,
+    1037.002
+   ],
+   "timeline": "whatif",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:deadpool_2_2018#q1",
+   "kind": "chunk",
+   "q": "What food does someone say everyone hates in a suggestion box?",
+   "document_id": "doc:deadpool_2_2018",
+   "chunk_id": "doc:deadpool_2_2018#s0043c00476",
+   "window": [
+    2066.357,
+    2077.493
+   ],
+   "ext_window": [
+    2066.274,
+    2096.344
+   ],
+   "timeline": "fox:xmen",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:deadpool_2_2018#q2",
+   "kind": "chunk",
+   "q": "Which character is mentioned as someone who can be tricked by a good-natured attitude?",
+   "document_id": "doc:deadpool_2_2018",
+   "chunk_id": "doc:deadpool_2_2018#s0128c01501",
+   "window": [
+    5741.32,
+    5756.335
+   ],
+   "ext_window": [
+    5741.237,
+    5766.262
+   ],
+   "timeline": "fox:xmen",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:deadpool_2_2018#qdoc",
+   "kind": "doc",
+   "q": "Which movie features a character telling Wade he is disappointed in his heart?",
+   "document_id": "doc:deadpool_2_2018",
+   "chunk_id": null,
+   "window": null,
+   "ext_window": null,
+   "timeline": "fox:xmen",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:x_men_2000#q1",
+   "kind": "chunk",
+   "q": "What fear keeps a character awake at night about a foolish law being passed?",
+   "document_id": "doc:x_men_2000",
+   "chunk_id": "doc:x_men_2000#s0154c00731",
+   "window": [
+    5604.182,
+    5621.533
+   ],
+   "ext_window": [
+    5565.101,
+    5636.84
+   ],
+   "timeline": "fox:xmen",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:x_men_2000#q2",
+   "kind": "chunk",
+   "q": "Who does the speaker worry the law might come for besides themselves?",
+   "document_id": "doc:x_men_2000",
+   "chunk_id": "doc:x_men_2000#s0150c00709",
+   "window": [
+    5456.868,
+    5467.587
+   ],
+   "ext_window": [
+    5450.695,
+    5482.978
+   ],
+   "timeline": "fox:xmen",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:x_men_apocalypse_2016#q1",
+   "kind": "chunk",
+   "q": "Who refuses to be called by a nickname in this scene?",
+   "document_id": "doc:x_men_apocalypse_2016",
+   "chunk_id": "doc:x_men_apocalypse_2016#s0064c00514",
+   "window": [
+    2786.57,
+    2796.01
+   ],
+   "ext_window": [
+    2785.61,
+    2806.39
+   ],
+   "timeline": "fox:xmen",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:x_men_apocalypse_2016#q2",
+   "kind": "chunk",
+   "q": "What is the name of the character who claims to know Mystique's true identity?",
+   "document_id": "doc:x_men_apocalypse_2016",
+   "chunk_id": "doc:x_men_apocalypse_2016#s0240c01497",
+   "window": [
+    1361.98,
+    1384.46
+   ],
+   "ext_window": [
+    1262.34,
+    1449.39
+   ],
+   "timeline": "fox:xmen",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:x_men_apocalypse_2016#qdoc",
+   "kind": "doc",
+   "q": "Which film features a cult worshipping a powerful ancient mutant lord?",
+   "document_id": "doc:x_men_apocalypse_2016",
+   "chunk_id": null,
+   "window": null,
+   "ext_window": null,
+   "timeline": "fox:xmen",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:x_men_the_last_stand_2006#q1",
+   "kind": "chunk",
+   "q": "Who reassures the mutant that the school is still open?",
+   "document_id": "doc:x_men_the_last_stand_2006",
+   "chunk_id": "doc:x_men_the_last_stand_2006#s0086c00526",
+   "window": [
+    3516.325,
+    3537.512
+   ],
+   "ext_window": [
+    3511.317,
+    3556.622
+   ],
+   "timeline": "fox:xmen",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:x_men_the_last_stand_2006#q2",
+   "kind": "chunk",
+   "q": "What does Hank need to tell the students about the school?",
+   "document_id": "doc:x_men_the_last_stand_2006",
+   "chunk_id": "doc:x_men_the_last_stand_2006#s0017c00108",
+   "window": [
+    716.734,
+    741.424
+   ],
+   "ext_window": [
+    710.69,
+    755.033
+   ],
+   "timeline": "fox:xmen",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:x_men_days_of_future_past_2014#q1",
+   "kind": "chunk",
+   "q": "Who tells Logan to pull himself together when he is panicking?",
+   "document_id": "doc:x_men_days_of_future_past_2014",
+   "chunk_id": "doc:x_men_days_of_future_past_2014#s0121c01173",
+   "window": [
+    4595.801,
+    4611.692
+   ],
+   "ext_window": [
+    4570.567,
+    4629.376
+   ],
+   "timeline": "fox:xmen",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:x_men_days_of_future_past_2014#q2",
+   "kind": "chunk",
+   "q": "Which character in the scene mentions that Logan can hear someone approaching?",
+   "document_id": "doc:x_men_days_of_future_past_2014",
+   "chunk_id": "doc:x_men_days_of_future_past_2014#s0146c01419",
+   "window": [
+    5540.161,
+    5556.302
+   ],
+   "ext_window": [
+    5535.448,
+    5569.148
+   ],
+   "timeline": "fox:xmen",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:venom_let_there_be_carnage_2021#q1",
+   "kind": "chunk",
+   "q": "Who complains about not getting support just once in this scene?",
+   "document_id": "doc:venom_let_there_be_carnage_2021",
+   "chunk_id": "doc:venom_let_there_be_carnage_2021#s0035c00446",
+   "window": [
+    1564.662,
+    1576.107
+   ],
+   "ext_window": [
+    1564.529,
+    1585.751
+   ],
+   "timeline": "sony:ssu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:venom_let_there_be_carnage_2021#q2",
+   "kind": "chunk",
+   "q": "What condiment is offered as a peace offering between two characters?",
+   "document_id": "doc:venom_let_there_be_carnage_2021",
+   "chunk_id": "doc:venom_let_there_be_carnage_2021#s0104c01145",
+   "window": [
+    4148.042,
+    4161.857
+   ],
+   "ext_window": [
+    4147.91,
+    4191.053
+   ],
+   "timeline": "sony:ssu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:spider_man_across_the_spider_verse_2023#q2",
+   "kind": "chunk",
+   "q": "What does the person say to Miles after feeling bad?",
+   "document_id": "doc:spider_man_across_the_spider_verse_2023",
+   "chunk_id": "doc:spider_man_across_the_spider_verse_2023#s0013c00109",
+   "window": [
+    449.85,
+    457.5
+   ],
+   "ext_window": [
+    435.252,
+    470.704
+   ],
+   "timeline": "sony:ssu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:spider_man_into_the_spider_verse_2018#q1",
+   "kind": "chunk",
+   "q": "In which year is Noir's universe set, and what role does he play?",
+   "document_id": "doc:spider_man_into_the_spider_verse_2018",
+   "chunk_id": "doc:spider_man_into_the_spider_verse_2018#s0137c01515",
+   "window": [
+    5121.784,
+    5131.21
+   ],
+   "ext_window": [
+    5121.732,
+    5142.012
+   ],
+   "timeline": "sony:ssu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:spider_man_into_the_spider_verse_2018#q2",
+   "kind": "chunk",
+   "q": "What year is Peni from, and what city is she from?",
+   "document_id": "doc:spider_man_into_the_spider_verse_2018",
+   "chunk_id": "doc:spider_man_into_the_spider_verse_2018#s0044c00625",
+   "window": [
+    1909.825,
+    1925.758
+   ],
+   "ext_window": [
+    1909.742,
+    1934.892
+   ],
+   "timeline": "sony:ssu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:spider_man_into_the_spider_verse_2018#qdoc",
+   "kind": "doc",
+   "q": "Which animated movie features multiple Spider-People from different universes teaming up?",
+   "document_id": "doc:spider_man_into_the_spider_verse_2018",
+   "chunk_id": null,
+   "window": null,
+   "ext_window": null,
+   "timeline": "sony:ssu",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:spider_man_2_2004#q1",
+   "kind": "chunk",
+   "q": "Who is the scientist being funded for fusion research in the conversation?",
+   "document_id": "doc:spider_man_2_2004",
+   "chunk_id": "doc:spider_man_2_2004#s0013c00113",
+   "window": [
+    724.57,
+    736.639
+   ],
+   "ext_window": [
+    724.401,
+    746.31
+   ],
+   "timeline": "sony:rami",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:spider_man_2_2004#q2",
+   "kind": "chunk",
+   "q": "What does the woman say about Harry's father's reaction to the news?",
+   "document_id": "doc:spider_man_2_2004",
+   "chunk_id": "doc:spider_man_2_2004#s0105c00604",
+   "window": [
+    4086.364,
+    4103.572
+   ],
+   "ext_window": [
+    4050.266,
+    4124.691
+   ],
+   "timeline": "sony:rami",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:spider_man_2_2004#qdoc",
+   "kind": "doc",
+   "q": "Which Spider-Man film features a mentor arguing Peter wasn't meant to be a hero?",
+   "document_id": "doc:spider_man_2_2004",
+   "chunk_id": null,
+   "window": null,
+   "ext_window": null,
+   "timeline": "sony:rami",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:spider_man_3_2007#q1",
+   "kind": "chunk",
+   "q": "What does the crowd chant at Spider-Man during the celebration?",
+   "document_id": "doc:spider_man_3_2007",
+   "chunk_id": "doc:spider_man_3_2007#s0064c00567",
+   "window": [
+    2896.143,
+    2916.163
+   ],
+   "ext_window": [
+    2883.005,
+    2925.881
+   ],
+   "timeline": "sony:rami",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:spider_man_3_2007#q2",
+   "kind": "chunk",
+   "q": "What magic word does Spider-Man shout to greet people in the scene?",
+   "document_id": "doc:spider_man_3_2007",
+   "chunk_id": "doc:spider_man_3_2007#s0077c00686",
+   "window": [
+    3418.957,
+    3437.1
+   ],
+   "ext_window": [
+    3418.79,
+    3453.951
+   ],
+   "timeline": "sony:rami",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:spider_man_3_2007#qdoc",
+   "kind": "doc",
+   "q": "Which movie features Spider-Man being cheered to kiss someone at a public event?",
+   "document_id": "doc:spider_man_3_2007",
+   "chunk_id": null,
+   "window": null,
+   "ext_window": null,
+   "timeline": "sony:rami",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:the_amazing_spider_man_2012#q1",
+   "kind": "chunk",
+   "q": "Who warns the doctor to leave the boy alone and not reveal the truth about his father?",
+   "document_id": "doc:the_amazing_spider_man_2012",
+   "chunk_id": "doc:the_amazing_spider_man_2012#s0210c01602",
+   "window": [
+    7789.048,
+    7808.236
+   ],
+   "ext_window": [
+    7613.771,
+    7808.236
+   ],
+   "timeline": "sony:webb",
+   "source": "gmi"
+  },
+  {
+   "id": "doc:the_amazing_spider_man_2012#q2",
+   "kind": "chunk",
+   "q": "What is the doctor being urged to keep hidden from the boy regarding his father?",
+   "document_id": "doc:the_amazing_spider_man_2012",
+   "chunk_id": "doc:the_amazing_spider_man_2012#s0140c01229",
+   "window": [
+    5104.62,
+    5114.402
+   ],
+   "ext_window": [
+    5079.194,
+    5126.551
+   ],
+   "timeline": "sony:webb",
+   "source": "gmi"
+  },
+  {
+   "id": "bench:0:the_avengers_2012",
+   "kind": "chunk",
+   "q": "What happened after Loki escaped with the Tesseract?",
+   "document_id": "doc:the_avengers_2012",
+   "chunk_id": null,
+   "window": null,
+   "ext_window": null,
+   "timeline": "mcu",
+   "source": "benchmark"
+  },
+  {
+   "id": "bench:1:wanda_vision_2021",
+   "kind": "chunk",
+   "q": "Which timeline does WandaVision belong to?",
+   "document_id": "doc:wanda_vision_2021_s01e01",
+   "chunk_id": null,
+   "window": null,
+   "ext_window": null,
+   "timeline": "mcu",
+   "source": "benchmark"
+  },
+  {
+   "id": "bench:2:wanda_vision_2021",
+   "kind": "chunk",
+   "q": "How did Wanda create Westview?",
+   "document_id": "doc:wanda_vision_2021_s01e01",
+   "chunk_id": null,
+   "window": null,
+   "ext_window": null,
+   "timeline": "mcu",
+   "source": "benchmark"
+  }
+ ]
+}
