@@ -58,6 +58,24 @@ def test_timeline_enum_enforced() -> None:
         QueryPlan(entities=["x"], timeline="marvel")
 
 
+def test_invalid_plan_fields_are_coerced_not_discarded() -> None:
+    """One over-long or out-of-enum field must not throw away the whole
+    (valid) plan — entities truncate to 6, bad literals fall to defaults."""
+    llm = _fake_llm_returning({
+        "entities": ["a", "b", "c", "d", "e", "f", "g"],
+        "operation": "bogus",
+        "intent": "weird",
+        "timeline": "marvel",
+        "reference_event": "X" * 300,
+    })
+    plan = parse_query(llm, "What happened to Wanda?")
+    assert plan.entities == ["a", "b", "c", "d", "e", "f"]
+    assert plan.operation == "free_search"
+    assert plan.intent == "semantic"
+    assert plan.timeline is None
+    assert len(plan.reference_event) == 160
+
+
 def test_rerank_grounds_chunks_over_synthetic_graph_rows() -> None:
     """B3: graph entity rows are neighbor-name summaries, not passages —
     they must not outrank grounded subtitle chunks."""

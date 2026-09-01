@@ -33,6 +33,9 @@ class GMIClient:
             transport=httpx.HTTPTransport(retries=3),
         )
 
+    def close(self) -> None:
+        self._http.close()
+
     def chat(
         self,
         messages: list[dict[str, str]],
@@ -57,8 +60,12 @@ class GMIClient:
                     headers=headers,
                 )
                 if resp.status_code == 402:
+                    # not retryable: the key works but the model is not on plan
                     raise GMIError(f"HTTP 402 (model not on plan): {resp.text[:200]}")
                 if resp.status_code == 429:
+                    last_err = GMIError(f"HTTP 429: {resp.text[:200]}")
+                    if attempt == retries:
+                        break
                     retry_after = resp.headers.get("Retry-After")
                     # cap the wait — a server "Retry-After: 3600" must never
                     # park a worker thread for an hour
@@ -68,17 +75,34 @@ class GMIClient:
                     )
                     logger.info("429 rate limit — sleeping %ss (attempt %d)", wait, attempt)
                     time.sleep(wait)
-                    last_err = GMIError(f"HTTP 429: {resp.text[:200]}")
                     continue
                 if resp.status_code >= 500:
                     last_err = GMIError(f"HTTP {resp.status_code}: {resp.text[:300]}")
+                    if attempt == retries:
+                        break
                     time.sleep(1.5 * (attempt + 1))
                     continue
-                resp.raise_for_status()
-                data = resp.json()
-                return data["choices"][0]["message"]["content"]
+                if resp.status_code >= 400:
+                    # other 4xx (bad key, bad request) never succeed on retry —
+                    # fail fast instead of burning attempts and sleep time
+                    raise GMIError(f"HTTP {resp.status_code}: {resp.text[:300]}")
+                try:
+                    data = resp.json()
+                    content = data["choices"][0]["message"]["content"]
+                except (ValueError, KeyError, IndexError, TypeError):
+                    raise GMIError(f"malformed response body: {resp.text[:300]}")
+                if content is None:
+                    # reasoning models can return null content, e.g. on
+                    # finish_reason=length — a None reaching callers crashes
+                    # .strip() far from the cause
+                    finish = data["choices"][0].get("finish_reason", "unknown")
+                    raise GMIError(f"model returned no content (finish_reason={finish})")
+                return content
             except httpx.HTTPError as e:
+                # transport errors (DNS, connect, read) are retryable
                 last_err = e
+                if attempt == retries:
+                    break
                 time.sleep(1.5 * (attempt + 1))
         raise GMIError(f"GMI request failed after {retries + 1} attempts: {last_err}")
 

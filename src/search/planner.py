@@ -5,7 +5,7 @@ skip the LLM entirely (spec:31).
 """
 import logging
 import re
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -23,6 +23,10 @@ Output ONLY JSON:
 Timeline must be one of: "mcu", "whatif", "sony:rami", "sony:webb", "sony:ssu", "sony:spiderverse", "fox:xmen", "fox:ff", "defenders" or null.
 If the question names an event and asks what happened after/before it, put the event in reference_event
 and use next_events/prev_events."""
+
+_ALLOWED_INTENTS = {
+    "entity_lookup", "event_lookup", "timeline_query", "connection_query", "semantic"
+}
 
 _ALLOWED_OPERATIONS = {
     "find_entity", "find_events", "next_events", "prev_events",
@@ -65,6 +69,26 @@ def _is_simple_name(q: str) -> bool:
     return all(w[0].isupper() for w in q.split() if w)
 
 
+def _coerce_plan(raw: Any) -> dict:
+    """Salvage a mostly-valid LLM plan: truncate entity overflow and drop
+    fields outside the allowed literals (model defaults then apply). One
+    over-long field must not throw away an otherwise valid plan."""
+    coerced = dict(raw) if isinstance(raw, dict) else {}
+    entities = coerced.get("entities") or []
+    coerced["entities"] = [str(e).strip() for e in entities if str(e).strip()][:6]
+    for field, allowed in (
+        ("intent", _ALLOWED_INTENTS),
+        ("operation", _ALLOWED_OPERATIONS),
+        ("timeline", TIMELINE_KEYS),
+    ):
+        if coerced.get(field) is not None and coerced[field] not in allowed:
+            coerced.pop(field)
+    for field in ("reference_event", "temporal_constraint"):
+        if coerced.get(field) is not None:
+            coerced[field] = str(coerced[field])[:160] or None
+    return coerced
+
+
 def parse_query(llm: GMIClient, query: str) -> QueryPlan:
     # spec:31 — simple single-name queries skip the LLM
     q = query.strip()
@@ -79,7 +103,10 @@ def parse_query(llm: GMIClient, query: str) -> QueryPlan:
             temperature=0.0,
             max_tokens=300,
         )
-        return QueryPlan(**raw)
+        try:
+            return QueryPlan(**raw)
+        except ValidationError:
+            return QueryPlan(**_coerce_plan(raw))
     except Exception as e:
         # degraded plan: semantic-only, no entities. Logged — silent
         # degradation is a lie the status line would repeat.

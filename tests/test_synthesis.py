@@ -1,7 +1,7 @@
 import pytest
 
 from src.config import settings
-from src.llm.client import GMIClient
+from src.llm.client import GMIError, GMIClient
 from src.search.synthesis import (
     EVIDENCE_LIMIT,
     _faithful,
@@ -117,6 +117,36 @@ def test_unfaithful_sentences_names_the_offender() -> None:
     bad = _unfaithful_sentences(answer, EVIDENCE)
     assert len(bad) == 1
     assert "Asgard" in bad[0]
+
+
+def test_faithful_gate_rejects_meta_noun_smuggling() -> None:
+    """A cited world-claim must not buy hedge exemption just by containing
+    the word 'evidence'/'sources' — exemption needs a reporting cue."""
+    smuggled = "He hid the evidence inside a vault underneath the archive. [1]"
+    assert not _faithful(smuggled, EVIDENCE)
+
+
+class _FirstAnswerThenRaise:
+    """First chat returns an unfaithful answer; the regen call dies."""
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def chat(self, messages, **kw):
+        self.calls += 1
+        if self.calls == 1:
+            return ("ANSWER: He ruled Asgard for a thousand glorious winters. [1]\n"
+                    "UNCERTAINTY: none\nSOURCES: The Avengers")
+        raise GMIError("regen backend down")
+
+
+def test_regeneration_failure_keeps_first_answer() -> None:
+    """A dead regen call must not destroy a good first answer."""
+    ranked = {"results": [{"type": "chunk", "data": EVIDENCE[0], "score": 0.5}]}
+    out = generate_answer(_FirstAnswerThenRaise(), "Who ruled Asgard?", ranked)
+    assert "Asgard" in out["answer"]
+    assert "could not be re-verified" in out["uncertainty"]
+    assert out["citations"]
 
 
 @pytest.mark.skipif(not settings.GMI_API_KEY, reason="needs live GMI key (.env)")

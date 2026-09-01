@@ -17,7 +17,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from src.llm.client import GMIClient
+from src.llm.client import GMIError, GMIClient
 
 logger = logging.getLogger(__name__)
 
@@ -134,24 +134,33 @@ def generate_answer(llm: GMIClient, question: str, ranked: dict[str, Any]) -> di
     unfaithful = _unfaithful_sentences(parsed["answer"], evidence)
     if unfaithful:
         logger.info("faithfulness gate tripped on %d sentence(s) — regenerating", len(unfaithful))
-        regen = llm.chat(
-            [
-                {"role": "system", "content": system},
-                {"role": "user", "content": user + "\n\nIMPORTANT: your previous attempt included "
-                 "claims not present in the evidence. Strictly re-derive from evidence only."},
-            ],
-            temperature=0.0,
-            max_tokens=800,
-        )
-        parsed2 = _parse_answer_block(regen, evidence)
-        parsed2["sources"] = _valid_sources(parsed2, evidence)
-        if not _unfaithful_sentences(parsed2["answer"], evidence):
-            parsed = parsed2
-        else:
+        try:
+            regen = llm.chat(
+                [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user + "\n\nIMPORTANT: your previous attempt included "
+                     "claims not present in the evidence. Strictly re-derive from evidence only."},
+                ],
+                temperature=0.0,
+                max_tokens=800,
+            )
+        except GMIError:
+            # the first answer was good; a dead regen call must not destroy it
+            logger.warning("faithfulness regeneration failed — keeping first answer with note")
             parsed["uncertainty"] = (
                 (parsed["uncertainty"] + "; " if parsed["uncertainty"] != "none" else "")
-                + "some claims could not be verified against retrieved evidence"
+                + "some claims could not be re-verified (verification call failed)"
             )
+        else:
+            parsed2 = _parse_answer_block(regen, evidence)
+            parsed2["sources"] = _valid_sources(parsed2, evidence)
+            if not _unfaithful_sentences(parsed2["answer"], evidence):
+                parsed = parsed2
+            else:
+                parsed["uncertainty"] = (
+                    (parsed["uncertainty"] + "; " if parsed["uncertainty"] != "none" else "")
+                    + "some claims could not be verified against retrieved evidence"
+                )
     parsed["citations"] = evidence
     return parsed
 
@@ -192,7 +201,7 @@ def _unfaithful_sentences(answer: str, evidence: list[dict]) -> list[str]:
         if not cited_text:  # every marker out of range
             bad.append(s)
             continue
-        if _is_hedge(s):
+        if _is_hedge(s, cited=True):
             continue
         ev_words = _content_words(cited_text)
         s_words = _content_words(s)
@@ -224,11 +233,24 @@ _META_MARKERS = (
     "referenced", "mentioned in",
 )
 
+# a meta marker alone must not exempt a CITED sentence — "Loki hid the
+# evidence in the vault [1]" is a world-claim. Exemption additionally
+# requires the sentence to actually report on the evidence's structure.
+_REPORTING_CUES = (
+    "discuss", "discusses", "mention", "mentions", "referenced",
+    "references", "cited", "cites", "cite", "explicitly place",
+    "explicitly places", "does not place", "does not state",
+    "does not support", "does not establish", "does not identify",
+    "does not name", "does not describe", "does not cover",
+)
 
-def _is_hedge(sentence: str) -> bool:
+
+def _is_hedge(sentence: str, cited: bool = False) -> bool:
     """A sentence that asserts nothing about the world — it reports the
     archive's own limits or the evidence's structure. Such meta-sentences
-    may cite freely without word-overlap; world-claims may not."""
+    may cite freely without word-overlap; world-claims may not. For cited
+    sentences a bare meta noun ("...the evidence...") is not enough: a
+    reporting cue must be present, or the overlap gate applies."""
     s = sentence.lower()
     if any(w in s for w in (
         "unclear", "unverified", "insufficient", "fragmented", "unspecified",
@@ -241,7 +263,9 @@ def _is_hedge(sentence: str) -> bool:
         "not directly", "not mention", "do not specify",
     )):
         return True
-    return any(m in s for m in _META_MARKERS)
+    if not any(m in s for m in _META_MARKERS):
+        return False
+    return not cited or any(c in s for c in _REPORTING_CUES)
 
 
 def _content_words(text: str) -> set[str]:
