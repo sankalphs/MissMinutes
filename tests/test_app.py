@@ -1,8 +1,5 @@
 """UI-layer tests — app.py's orchestration, status vocabulary, evidence
 rendering and scope bridges, all hermetic (no backends, no LLM)."""
-import re
-
-import gradio as gr
 import pytest
 
 import app

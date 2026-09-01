@@ -70,13 +70,23 @@ def test_wyzie() -> None:
 
 
 if __name__ == "__main__":
+    import httpx
+
     print("GMI JSON smoke:")
     test_gmi_json()
     print("Wyzie smoke:")
     try:
         test_wyzie()
     except AssertionError as e:
-        print(f"  WYzie 503 outage (service-side) — DEFERRED, retry at Phase 2: {e}")
+        msg = str(e)
+        # only a service-side outage defers; a 401/400 is a real failure
+        if any(f"HTTP {code}" in msg for code in (429, 502, 503, 504)):
+            print(f"  wyzie outage (service-side) — DEFERRED: {msg[:200]}")
+            print("ALL SMOKE TESTS RUN (wyzie deferred)")
+        else:
+            raise
+    except httpx.HTTPError as e:
+        print(f"  wyzie unreachable (network) — DEFERRED: {e}")
         print("ALL SMOKE TESTS RUN (wyzie deferred)")
     else:
         print("ALL SMOKE TESTS PASSED")

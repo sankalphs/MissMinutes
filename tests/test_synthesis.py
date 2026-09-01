@@ -150,6 +150,7 @@ def test_regeneration_failure_keeps_first_answer() -> None:
 
 
 @pytest.mark.skipif(not settings.GMI_API_KEY, reason="needs live GMI key (.env)")
+@pytest.mark.live
 def test_generate_answer_live() -> None:
     ranked = {
         "results": [

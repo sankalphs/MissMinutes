@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import html
 import logging
+import re
 import time
 from pathlib import Path
 
@@ -342,17 +343,12 @@ def _flight_note() -> str:
     return "<div id='flight-note' aria-live='polite'></div>"
 
 
-_CITE_RE = None
+_CITE_RE = re.compile(r"\[(\d+)\]")
 
 
 def _answer_html(answer: str) -> str:
     """Ruling text with [n] markers rendered as amber superscript links that
     scroll to the matching evidence row — the citation affordance, live."""
-    global _CITE_RE
-    if _CITE_RE is None:
-        import re
-        _CITE_RE = re.compile(r"\[(\d+)\]")
-
     def _sub(m):
         n = m.group(1)
         if n.isdigit() and 1 <= int(n) <= EVIDENCE_LIMIT:
@@ -369,6 +365,15 @@ def _answer_html(answer: str) -> str:
     return "<br/>".join(parts)
 
 
+def _evidence_html(citations: list[dict], empty_note: str) -> str:
+    rows = [_ev_row(i, c) for i, c in enumerate(citations, 1)]
+    if rows:
+        return ("<div id='evidence'><p class='ev-heading'>Evidence from the timeline</p>"
+                + "".join(rows) + "</div>")
+    return ("<div id='evidence'><p class='ev-heading'>Evidence from the timeline</p>"
+            f"<p class='ev-sub'>{empty_note}</p></div>")
+
+
 def search_and_answer(question: str, timeline: str):
     """Orchestrated pipeline: plan -> hybrid retrieval -> grounded synthesis."""
     if not question.strip():
@@ -382,49 +387,15 @@ def search_and_answer(question: str, timeline: str):
         graph = get_graph()
         llm = get_llm()
         plan = parse_query(llm, question)
+        # a stale/unknown dropdown label must never clobber a timeline the
+        # planner inferred from the question
         if timeline and timeline != "All timelines":
-            plan.timeline = LABEL_TO_KEY.get(timeline)
+            if key := LABEL_TO_KEY.get(timeline):
+                plan.timeline = key
 
         ranked = hybrid_search(store, vs, graph, question, plan)
-        result = generate_answer(llm, question, ranked)
-
-        citations = result.get("citations", [])
-        used = _used_legs(ranked, result.get("answer", ""))
-        ev_rows = [_ev_row(i, c) for i, c in enumerate(citations, 1)]
-        evidence = (
-            "<div id='evidence'><p class='ev-heading'>Evidence from the timeline</p>"
-            + "".join(ev_rows) + "</div>"
-            if ev_rows
-            else "<div id='evidence'><p class='ev-heading'>Evidence from the timeline</p>"
-                 "<p class='ev-sub'>No subtitle passages were retrievable for this query.</p></div>"
-        )
-
-        out = (
-            "<div id='answer-wrap'>"
-            "<p class='stamp'>RULING ISSUED</p>"
-            f"<p class='ruling'>{_answer_html(result['answer'])}</p>"
-        )
-        if result.get("uncertainty") and result["uncertainty"] != "none":
-            out += (
-                "<span class='warn'><svg class='warn-ic' viewBox='0 0 24 24' aria-hidden='true'>"
-                "<path d='M12 3 22 20H2Z' fill='none' stroke='currentColor' stroke-width='2' "
-                "stroke-linejoin='round'/><path d='M12 9.5v4.5' stroke='currentColor' "
-                "stroke-width='2' stroke-linecap='round'/><circle cx='12' cy='16.8' r='1.15' "
-                "fill='currentColor' stroke='none'/></svg>"
-                f"{html.escape(result['uncertainty'])}</span>"
-            )
-        if result.get("sources"):
-            out += (
-                "<span class='src'>Sources — "
-                + html.escape(", ".join(result["sources"][:8]))
-                + "</span>"
-            )
-        out += "</div>"
-
-        status = _status_html(ranked.get("legs", {}), used, time.perf_counter() - t0)
-        return out, evidence, status
     except Exception:
-        logger.exception("pipeline error")
+        logger.exception("retrieval error")
         status = (
             "<div id='pipeline-status'>FILE REJECTED — THE ARCHIVE IS MOMENTARILY "
             "UNREACHABLE. TRY REPHRASING OR RE-FILE IN A MOMENT.</div>"
@@ -433,10 +404,59 @@ def search_and_answer(question: str, timeline: str):
             "<div id='answer-wrap'><p class='stamp'>REQUEST REJECTED</p>"
             "<p>The archivist could not reach the records. Try rephrasing the "
             "question, or file the request again in a moment.</p></div>",
-            "<div id='evidence'><p class='ev-heading'>Evidence from the timeline</p>"
-            "<p class='ev-sub'>No passages accompany a rejected request.</p></div>",
+            _evidence_html([], "No passages accompany a rejected request."),
             status,
         )
+
+    # synthesis failures keep the retrieval work: the evidence is in hand,
+    # only the ruling is missing
+    try:
+        result = generate_answer(llm, question, ranked)
+    except Exception:
+        logger.exception("synthesis error")
+        citations = [
+            r["data"] for r in ranked.get("results", []) if r["type"] == "chunk"
+        ][:EVIDENCE_LIMIT]
+        return (
+            "<div id='answer-wrap'><p class='stamp'>RULING DEFERRED</p>"
+            "<p>Evidence was retrieved but the archivist could not reach the "
+            "synthesis engine. The passages below stand on their own — re-file "
+            "for a ruling.</p></div>",
+            _evidence_html(citations, "No subtitle passages were retrievable for this query."),
+            "<div id='pipeline-status'>FILE PROCESSED (DEGRADED) — SYNTHESIS UNREACHABLE"
+            f" · {time.perf_counter() - t0:.1f}s</div>",
+        )
+
+    citations = result.get("citations", [])
+    used = _used_legs(ranked, result.get("answer", ""))
+    evidence = _evidence_html(
+        citations, "No subtitle passages were retrievable for this query."
+    )
+
+    out = (
+        "<div id='answer-wrap'>"
+        "<p class='stamp'>RULING ISSUED</p>"
+        f"<p class='ruling'>{_answer_html(result['answer'])}</p>"
+    )
+    if result.get("uncertainty") and result["uncertainty"] != "none":
+        out += (
+            "<span class='warn'><svg class='warn-ic' viewBox='0 0 24 24' aria-hidden='true'>"
+            "<path d='M12 3 22 20H2Z' fill='none' stroke='currentColor' stroke-width='2' "
+            "stroke-linejoin='round'/><path d='M12 9.5v4.5' stroke='currentColor' "
+            "stroke-width='2' stroke-linecap='round'/><circle cx='12' cy='16.8' r='1.15' "
+            "fill='currentColor' stroke='none'/></svg>"
+            f"{html.escape(result['uncertainty'])}</span>"
+        )
+    if result.get("sources"):
+        out += (
+            "<span class='src'>Sources — "
+            + html.escape(", ".join(result["sources"][:8]))
+            + "</span>"
+        )
+    out += "</div>"
+
+    status = _status_html(ranked.get("legs", {}), used, time.perf_counter() - t0)
+    return out, evidence, status
 
 
 def _used_legs(ranked: dict, answer: str) -> list[str]:
@@ -445,9 +465,7 @@ def _used_legs(ranked: dict, answer: str) -> list[str]:
     A graph hit only counts when the answer's citations include a graph row;
     otherwise GRAPH shows as serving when every cited chunk came from FTS5
     or Qdrant."""
-    import re
-
-    cited = {int(c) for c in re.findall(r"\[(\d+)\]", answer)}
+    cited = {int(c) for c in _CITE_RE.findall(answer)}
     results = ranked.get("results", [])
     used: list[str] = []
 
@@ -475,11 +493,6 @@ def _used_legs(ranked: dict, answer: str) -> list[str]:
         for r in results[:EVIDENCE_LIMIT]:
             _add(_leg_of(r))
     return used
-
-
-def run_example(question: str, timeline: str):
-    """Fill-and-run: echo the query into the input, then answer it."""
-    return question, *search_and_answer(question, timeline)
 
 
 def echo_scope(timeline: str):
@@ -511,7 +524,7 @@ def build_app() -> gr.Blocks:
           </span>
           <span class="status"><span class="dot"></span>SACRED TIMELINE · STABLE</span>
         </div>
-        <div id="chrono" aria-label="Chrono-monitor: the Sacred Timeline with branch timelines">
+        <div id="chrono" role="group" aria-label="Chrono-monitor: the Sacred Timeline with branch timelines">
           <div id="chrono-desktop">{chronoscope_svg(compact=False)}</div>
           <div id="chrono-mobile">{chronoscope_svg(compact=True)}</div>
           <div class="crt-overlay" aria-hidden="true"></div>
@@ -577,9 +590,11 @@ def build_app() -> gr.Blocks:
         scope_tb.change(scope_from_scene, inputs=[scope_tb], outputs=[tl])
         tl.change(echo_scope, inputs=[tl], outputs=[scope_note])
         for exb, ex_text in zip(ex_buttons, EXAMPLES):
+            # the question is a constant of this button — a closure, not a
+            # hidden Textbox component wired into the graph
             exb.click(
-                run_example,
-                inputs=[gr.Textbox(value=ex_text, visible=False), tl],
+                lambda tl_val, _ex=ex_text: (_ex, *search_and_answer(_ex, tl_val)),
+                inputs=[tl],
                 outputs=[q, out, ev, status],
             )
     return app
@@ -587,14 +602,15 @@ def build_app() -> gr.Blocks:
 
 if __name__ == "__main__":
     import os
-    import uvicorn
 
-    from src.ui.scene_server import scene_app
+    import uvicorn
+    from starlette.applications import Starlette
+
     blocks = build_app()
     blocks.queue(default_concurrency_limit=1)
-    gr.mount_gradio_app(scene_app, blocks, path="/", css=CSS, head=HERO_JS)
+    scene = gr.mount_gradio_app(Starlette(), blocks, path="/", css=CSS, head=HERO_JS)
     uvicorn.run(
-        scene_app,
+        scene,
         host=os.getenv("MM_HOST", "127.0.0.1"),
         port=int(os.getenv("MM_PORT", "7860")),
     )

@@ -62,7 +62,7 @@ _BRANCHES_SM = [
     {"key": "defenders",  "label": "THE DEFENDERS",      "fork": (222, 156), "tip": (322, 134), "lbl": (322, 118), "anchor": "end",   "tier": "primary"},
     {"key": "whatif",     "label": "WHAT IF...?",       "fork": (172, 100), "tip": (72, 78),   "lbl": (72, 62),   "anchor": "start", "tier": "primary"},
     {"key": "fox:ff",     "label": "FOX FANTASTIC FOUR", "fork": (208, 62),  "tip": (302, 44),  "lbl": (302, 28),  "anchor": "end",   "tier": "distant", "pruned": True},
-    {"key": "sony:spiderverse", "label": "SPIDER-VERSE", "fork": (192, 46),  "tip": (96, 28),   "lbl": (96, 12),   "anchor": "start", "tier": "distant", "pruned": True},
+    {"key": "sony:spiderverse", "label": "SPIDER-VERSE", "fork": (192, 46),  "tip": (96, 28),   "lbl": (96, 20),   "anchor": "start", "tier": "distant", "pruned": True},
 ]
 
 # Machine readouts rendered on the console strip (app.py), not the glass
@@ -88,24 +88,27 @@ def _branch_path(fork: tuple, tip: tuple) -> str:
     return f"M {fx} {fy} Q {mx} {my} {tx} {ty}"
 
 
-def _defs(svg: list) -> None:
+def _defs(svg: list, uid: str) -> None:
+    """Per-variant def ids: the desktop and compact SVGs render into the
+    SAME document (app.py mounts both), so ids must not collide — url(#…)
+    resolves to whichever twin comes first in document order."""
     svg.append('<defs>')
-    svg.append('<radialGradient id="glass" cx="42%" cy="38%" r="85%">'
+    svg.append(f'<radialGradient id="glass-{uid}" cx="42%" cy="38%" r="85%">'
                '<stop offset="0%" stop-color="#1A1630"/>'
                '<stop offset="45%" stop-color="#14121F"/>'
                '<stop offset="100%" stop-color="#0B0A14"/></radialGradient>')
-    svg.append('<radialGradient id="forkglow">'
+    svg.append(f'<radialGradient id="forkglow-{uid}">'
                '<stop offset="0%" stop-color="#FFB74A" stop-opacity="0.9"/>'
                '<stop offset="100%" stop-color="#FFB74A" stop-opacity="0"/></radialGradient>')
-    svg.append('<filter id="linesoft" x="-40%" y="-40%" width="180%" height="180%">'
+    svg.append(f'<filter id="linesoft-{uid}" x="-40%" y="-40%" width="180%" height="180%">'
                '<feGaussianBlur stdDeviation="3"/></filter>')
-    svg.append('<filter id="corehot" x="-60%" y="-60%" width="220%" height="220%">'
+    svg.append(f'<filter id="corehot-{uid}" x="-60%" y="-60%" width="220%" height="220%">'
                '<feGaussianBlur stdDeviation="1.1"/></filter>')
     svg.append('</defs>')
 
 
 def _grid(svg: list, w: int, h: int) -> None:
-    svg.append(f'<g stroke="#3A2E4A" stroke-width="0.6" opacity="0.28">')
+    svg.append('<g stroke="#3A2E4A" stroke-width="0.6" opacity="0.28">')
     for x in range(60, w, 60):
         svg.append(f'<line x1="{x}" y1="0" x2="{x}" y2="{h}"/>')
     for y in range(40, h, 40):
@@ -114,21 +117,25 @@ def _grid(svg: list, w: int, h: int) -> None:
 
 
 def _branch_group(svg: list, key: str, label: str, fork: tuple, tip: tuple,
-                  tier: str, pruned: bool, lbl: tuple | None, anchor: str) -> None:
+                  tier: str, pruned: bool, lbl: tuple | None, anchor: str, uid: str) -> None:
     p = _branch_path(fork, tip)
     cls = "branch" + (" pruned" if pruned else "")
     gcls = "branch-g" + (" pruned" if pruned else "")
     w = _TIER_W[tier]
     fx, fy = fork
-    svg.append(f'<g class="{gcls}" data-key="{key}" '
-               f'data-label="{label}" data-pruned="{1 if pruned else 0}" '
-               f'tabindex="{"-1" if pruned else "0"}" role="button" '
-               f'aria-label="Scope search to {label}'
-               + (' (pruned — no files)' if pruned else '') + '">')
-    svg.append(f'<path class="{cls} sleeve" d="{p}" stroke-width="{w * 3}" filter="url(#linesoft)"/>')
+    if pruned:
+        # announced as an inert image, not a focusable button that does nothing
+        svg.append(f'<g class="{gcls}" data-key="{key}" '
+                   f'data-label="{label}" data-pruned="1" role="img" aria-disabled="true" '
+                   f'aria-label="{label} (pruned — no files)">')
+    else:
+        svg.append(f'<g class="{gcls}" data-key="{key}" '
+                   f'data-label="{label}" data-pruned="0" tabindex="0" role="button" '
+                   f'aria-label="Scope search to {label}">')
+    svg.append(f'<path class="{cls} sleeve" d="{p}" stroke-width="{w * 3}" filter="url(#linesoft-{uid})"/>')
     svg.append(f'<path class="{cls} core" d="{p}" stroke-width="{w}"/>')
     r = {"primary": 14, "secondary": 10, "distant": 7}[tier]
-    svg.append(f'<circle class="fork" cx="{fx}" cy="{fy}" r="{r}" fill="url(#forkglow)"/>')
+    svg.append(f'<circle class="fork" cx="{fx}" cy="{fy}" r="{r}" fill="url(#forkglow-{uid})"/>')
     svg.append(f'<circle class="fork-dot" cx="{fx}" cy="{fy}" r="2.2"/>')
     if lbl is not None:
         lx, ly = lbl
@@ -146,16 +153,16 @@ def chronoscope_svg(compact: bool = False) -> str:
     strip (app.py), not on the SVG floor where the lap covered them.
     """
     if compact:
-        w, h, spine, branches = 390, 430, _SPINE_SM, _BRANCHES_SM
+        w, h, spine, branches, uid = 390, 430, _SPINE_SM, _BRANCHES_SM, "m"
     else:
-        w, h, spine, branches = 1200, 560, _SPINE, _BRANCHES
+        w, h, spine, branches, uid = 1200, 560, _SPINE, _BRANCHES, "d"
     svg = [f'<svg class="chronoscope" viewBox="0 0 {w} {h}" '
            f'preserveAspectRatio="xMidYMid slice" '
            f'role="group" aria-label="Chrono-monitor: the Sacred Timeline with branch '
            f'timelines. Branch lines are buttons that scope the search to that '
            f'timeline; the scope dropdown below is the keyboard alternative.">']
-    _defs(svg)
-    svg.append(f'<rect width="{w}" height="{h}" fill="url(#glass)"/>')
+    _defs(svg, uid)
+    svg.append(f'<rect width="{w}" height="{h}" fill="url(#glass-{uid})"/>')
     _grid(svg, w, h)
 
     # --- the Sacred Timeline: layered luminous spine + its mcu branch group --
@@ -165,15 +172,15 @@ def chronoscope_svg(compact: bool = False) -> str:
     svg.append('<g class="branch-g" data-key="mcu" data-label="MCU / SACRED TIMELINE" '
                'data-pruned="0" tabindex="0" role="button" '
                'aria-label="Scope search to the Sacred Timeline (MCU)">')
-    svg.append(f'<path class="spine sleeve" d="{spine}" filter="url(#linesoft)"/>')
-    svg.append(f'<path class="spine core" d="{spine}" filter="url(#corehot)"/>')
+    svg.append(f'<path class="spine sleeve" d="{spine}" filter="url(#linesoft-{uid})"/>')
+    svg.append(f'<path class="spine core" d="{spine}" filter="url(#corehot-{uid})"/>')
     svg.append(f'<path class="hit spine-hit" d="{spine}" stroke-width="26"/>')
     svg.append('</g>')
 
     for b in branches:
         _branch_group(
             svg, b["key"], b["label"], b["fork"], b["tip"], b["tier"],
-            bool(b.get("pruned")), b.get("lbl"), b.get("anchor", "start"),
+            bool(b.get("pruned")), b.get("lbl"), b.get("anchor", "start"), uid,
         )
 
     if not compact:

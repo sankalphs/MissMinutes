@@ -183,6 +183,7 @@ def test_semantic_scope_has_no_unscoped_fallback() -> None:
 
 
 @pytest.mark.skipif(not _gmi_key(), reason="needs live GMI key (.env)")
+@pytest.mark.live
 def test_complex_query_plan_parses_live() -> None:
     plan = parse_query(GMIClient(), "What happened after Loki escaped with the Tesseract?")
     assert plan.reference_event or plan.entities, f"plan empty: {plan}"
