@@ -3,6 +3,12 @@
 Pipeline: raw .srt -> cues -> cleaned dialogue lines -> scene chunks.
 Chunks preserve exact source boundaries (citations point to chunk_id +
 cue range) per spec:6,20.
+
+Behavior change (exp/chunking): a scene boundary no longer flushes the
+buffer unconditionally — it flushes only once the buffer holds
+>= MIN_CHUNK_CHARS chars, so sub-MIN scenes merge across the gap into one
+context-rich chunk (a chunk may now span scene boundaries). MAX_CHUNK_CHARS
+and the sentence-end early-split still flush as before.
 """
 import re
 from dataclasses import dataclass
@@ -79,7 +85,12 @@ def is_scene_boundary(prev: Cue, cur: Cue) -> bool:
 
 
 def chunk_cues(cues: list[Cue], doc_key: str) -> list[Chunk]:
-    """Group cues into scene chunks; split oversized scenes on sentence ends."""
+    """Group cues into scene chunks; split oversized scenes on sentence ends.
+
+    At a scene boundary the buffer flushes only if it already holds
+    >= MIN_CHUNK_CHARS chars — sub-MIN scenes merge across the gap so
+    embeddings see some context. A chunk may span scenes; cue indices keep
+    chunk_ids unique per doc."""
     scenes: list[list[Cue]] = []
     cur_scene: list[Cue] = []
     prev: Cue | None = None
@@ -93,19 +104,23 @@ def chunk_cues(cues: list[Cue], doc_key: str) -> list[Chunk]:
         scenes.append(cur_scene)
 
     chunks: list[Chunk] = []
+    buf: list[Cue] = []
+    buf_chars = 0
+    buf_scene = 0
     for si, scene in enumerate(scenes):
-        buf: list[Cue] = []
-        buf_chars = 0
+        if buf and buf_chars >= MIN_CHUNK_CHARS:
+            chunks.append(_mk(doc_key, buf_scene, buf))
+            buf, buf_chars = [], 0
+            buf_scene = si
         for c in scene:
             line_len = len(c.text) + 1
             if buf and (buf_chars + line_len > MAX_CHUNK_CHARS or c.text.rstrip().endswith((".", "!", "?")) and buf_chars + line_len > MIN_CHUNK_CHARS):
-                chunks.append(_mk(doc_key, si, buf))
+                chunks.append(_mk(doc_key, buf_scene, buf))
                 buf, buf_chars = [], 0
             buf.append(c)
             buf_chars += line_len
-        if buf:
-            chunks.append(_mk(doc_key, si, buf))
-    # merge tiny trailing chunks within a scene is skipped: small chunks are fine for citations
+    if buf:
+        chunks.append(_mk(doc_key, buf_scene, buf))
     return chunks
 
 

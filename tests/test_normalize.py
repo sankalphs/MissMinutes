@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from src.ingestion.normalize import chunk_cues, clean_cue, normalize, parse_srt
+from src.ingestion.normalize import Cue, chunk_cues, clean_cue, normalize, parse_srt
 
 FIXTURE = Path(__file__).parent / "fixtures" / "pilot.srt"
 
@@ -62,3 +62,24 @@ def test_chunk_id_format(content: str) -> None:
     _, chunks = normalize(content, "doc:x")
     for ch in chunks:
         assert "#s" in ch.chunk_id and ch.chunk_id.startswith("doc:x#s")
+
+
+def test_small_scene_merges_across_gap() -> None:
+    # scene 1 holds < MIN_CHUNK_CHARS chars: the 6s boundary must NOT flush
+    # it — both scenes land in one context-rich chunk
+    short = [Cue(1, 0.0, 1.0, "Hi there."), Cue(2, 6.0, 7.0, "Still here.")]
+    chunks = chunk_cues(short, "doc:m")
+    assert len(chunks) == 1
+    assert chunks[0].cue_start == 1 and chunks[0].cue_end == 2
+    assert chunks[0].start_s == 0.0 and chunks[0].end_s == 7.0
+
+
+def test_grown_scene_flushes_at_gap() -> None:
+    # buffer already holds >= MIN_CHUNK_CHARS at the gap: boundary flushes
+    filler = "x" * 210
+    cues = [Cue(1, 0.0, 1.0, filler), Cue(2, 6.0, 7.0, "new scene")]
+    chunks = chunk_cues(cues, "doc:m")
+    assert len(chunks) == 2
+    assert chunks[0].text == filler and chunks[1].text == "new scene"
+    assert chunks[0].chunk_id == "doc:m#s0000c00001"
+    assert chunks[1].chunk_id == "doc:m#s0001c00002"
