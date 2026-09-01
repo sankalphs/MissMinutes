@@ -1,0 +1,70 @@
+{
+  "summary": {
+    "cases": 5,
+    "chunk_cases": 5,
+    "evidence6_doc_recall": 1.0,
+    "doc_recall@1": 0.4,
+    "doc_recall@3": 0.8,
+    "doc_recall@6": 1.0,
+    "doc_recall@12": 1.0,
+    "chunk_recall@1": 0.2,
+    "chunk_recall@3": 0.4,
+    "chunk_recall@6": 0.4,
+    "chunk_recall@12": 0.4,
+    "doc_mrr@12": 0.6067,
+    "chunk_mrr@12": 0.3,
+    "ndcg@12": 0.6724,
+    "primary": 0.675,
+    "wall_s": 22.0
+  },
+  "per_case": [
+    {
+      "id": "doc:jessica_jones_2015_s02e10#q1",
+      "q": "Who refused to talk when shown Karl's picture in this scene?",
+      "chunk_grade": 1,
+      "doc_grade": 1,
+      "first_hit_rank": 5,
+      "evidence6": 1
+    },
+    {
+      "id": "doc:jessica_jones_2015_s02e10#q2",
+      "q": "What kind of motel is mentioned where the events stay private?",
+      "chunk_grade": 1,
+      "doc_grade": 1,
+      "first_hit_rank": 3,
+      "evidence6": 1
+    },
+    {
+      "id": "doc:runaways_2017_s01e04#q1",
+      "q": "What does the bracelet do that the mother didn't want removed?",
+      "chunk_grade": 3,
+      "doc_grade": 1,
+      "first_hit_rank": 2,
+      "evidence6": 1
+    },
+    {
+      "id": "doc:runaways_2017_s01e04#q2",
+      "q": "Does anyone else at the church have a glowing ability?",
+      "chunk_grade": 1,
+      "doc_grade": 1,
+      "first_hit_rank": 1,
+      "evidence6": 1
+    },
+    {
+      "id": "doc:agents_of_shield_2013_s02e19#q1",
+      "q": "Who pulled a character off Ward after an attack on the Quinjet?",
+      "chunk_grade": 3,
+      "doc_grade": 1,
+      "first_hit_rank": 1,
+      "evidence6": 1
+    }
+  ],
+  "legs_top6_doc_recall": {
+    "lexical": 0.8,
+    "semantic": 1.0
+  },
+  "config": {
+    "MM_EVAL_LEXICAL": "bm25",
+    "EMBEDDING_MODEL": "BAAI/bge-small-en-v1.5"
+  }
+}
