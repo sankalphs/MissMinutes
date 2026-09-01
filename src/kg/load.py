@@ -8,10 +8,8 @@ timeline queries can walk the graph, not just FTS.
 """
 import json
 import logging
-import sqlite3
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Any
 
 from pydantic import ValidationError
 
@@ -19,6 +17,7 @@ from src.graph.schema import NODE_LABELS, Graph
 from src.ingestion.store import Store
 from src.kg.resolve import EntityResolver
 from src.kg.schemas import ChunkExtraction
+from src.db import connect as db_connect
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +25,7 @@ BATCH = 500
 
 
 def _rows(db_path, model: str) -> list[tuple]:
-    con = sqlite3.connect(db_path)
+    con = db_connect(db_path)
     rows = con.execute(
         "SELECT chunk_id, raw FROM extractions WHERE status = 'ok' AND model = ?",
         (model,),
@@ -43,7 +42,7 @@ def load_all(graph: Graph, resolver: EntityResolver, store: Store, model: str,
     resume=True only unloaded windows are processed (MERGE keeps re-runs
     idempotent but skipping is far faster).
     """
-    con = sqlite3.connect(store.path)
+    con = db_connect(store.path)
     con.execute(
         """CREATE TABLE IF NOT EXISTS load_ledger (
             chunk_id TEXT NOT NULL,
@@ -111,7 +110,7 @@ def load_all(graph: Graph, resolver: EntityResolver, store: Store, model: str,
             _write_rels(graph, rel_batch)
             rel_batch.clear()
         if ledger_batch:
-            con = sqlite3.connect(store.path)
+            con = db_connect(store.path)
             con.executemany(
                 "INSERT OR REPLACE INTO load_ledger (chunk_id, model, loaded_at) VALUES (?, ?, ?)",
                 ledger_batch,

@@ -5,7 +5,7 @@ Chunks preserve exact source boundaries (citations point to chunk_id +
 cue range) per spec:6,20.
 """
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import srt
 
@@ -45,10 +45,14 @@ def parse_srt(content: str) -> list[Cue]:
         content = content[1:]
     try:
         subs = list(srt.parse(content))
-    except srt.SRTParseError:
+    except srt.SRTParseError as e:
         # last resort: strip blank lines between cues and retry
         cleaned = re.sub(r"\n{3,}", "\n\n", content)
-        subs = list(srt.parse(cleaned))
+        try:
+            subs = list(srt.parse(cleaned))
+        except srt.SRTParseError as e2:
+            # loud with context, never a bare parse error from deep inside srt
+            raise srt.SRTParseError(f"unparseable srt even after blank-line cleanup: {e2}") from e
     cues = []
     for i, s in enumerate(subs, 1):
         text = " ".join(line.strip() for line in s.content.splitlines() if line.strip())
@@ -60,7 +64,9 @@ def clean_cue(text: str) -> str:
     text = re.sub(r"<[^>]+>", "", text)          # <i>, <font ...>
     text = re.sub(r"\{[^}]+\}", "", text)         # {\an8}
     text = re.sub(r"^#\w+#\s*", "", text)          # leading #Red# color tags
-    text = text.replace("-->", "")
+    # as a space: cue text fused with a stray timestamp ("run-->away") would
+    # otherwise become one nonsense word the embedder can't see through
+    text = text.replace("-->", " ")
     lines = [ln.strip() for ln in text.splitlines()]
     kept = [ln for ln in lines if ln and not any(p.match(ln) for p in NOISE_PATTERNS)]
     out = " ".join(kept)

@@ -1,10 +1,15 @@
 """Wyzie Subs client with a request ledger and daily budget enforcement.
 
 The free key allows 1000 search requests / UTC day. Every request is recorded
-in the SQLite ledger so re-runs never double-spend. 503 (service outage) is
-retried with backoff and NOT counted against budget (fails before accounting).
+in the SQLite ledger so re-runs never double-spend; successful searches also
+cache their hit list, so a crash after search + before download recovers on
+the next run without re-spending. 429/503 are retried with backoff and NOT
+counted against budget (only status-200 rows are); exhausted retries are
+ledgered for observability and retried on the next run.
 """
+import json
 import logging
+import sqlite3
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -13,6 +18,7 @@ from pathlib import Path
 import httpx
 
 from src.config import settings
+from src.db import connect as db_connect
 
 logger = logging.getLogger(__name__)
 
@@ -44,40 +50,47 @@ class WyzieClient:
     # ---------- ledger ----------
 
     def _init_ledger(self) -> None:
-        import sqlite3
-
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        con = sqlite3.connect(self.db_path)
+        con = db_connect(self.db_path)
         con.execute(
             """CREATE TABLE IF NOT EXISTS wyzie_ledger (
                 ts TEXT NOT NULL,
                 utc_day TEXT NOT NULL,
                 kind TEXT NOT NULL,
                 target TEXT NOT NULL,
-                status INTEGER NOT NULL
+                status INTEGER NOT NULL,
+                hits TEXT
             )"""
         )
+        # hits column postdates the table in existing databases
+        try:
+            con.execute("ALTER TABLE wyzie_ledger ADD COLUMN hits TEXT")
+        except sqlite3.OperationalError:
+            pass
         con.commit()
         con.close()
 
     def _utc_day(self) -> str:
         return datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    def _log_request(self, kind: str, target: str, status: int) -> None:
-        import sqlite3
-
-        con = sqlite3.connect(self.db_path)
+    def _log_request(self, kind: str, target: str, status: int, hits: list[SubtitleHit] | None = None) -> None:
+        con = db_connect(self.db_path)
         con.execute(
-            "INSERT INTO wyzie_ledger (ts, utc_day, kind, target, status) VALUES (?, ?, ?, ?, ?)",
-            (datetime.now(timezone.utc).isoformat(), self._utc_day(), kind, target, status),
+            "INSERT INTO wyzie_ledger (ts, utc_day, kind, target, status, hits) VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                datetime.now(timezone.utc).isoformat(),
+                self._utc_day(),
+                kind,
+                target,
+                status,
+                json.dumps([h.__dict__ for h in hits]) if hits is not None else None,
+            ),
         )
         con.commit()
         con.close()
 
     def spent_today(self) -> int:
-        import sqlite3
-
-        con = sqlite3.connect(self.db_path)
+        con = db_connect(self.db_path)
         cur = con.execute(
             "SELECT COUNT(*) FROM wyzie_ledger WHERE utc_day = ? AND status = 200",
             (self._utc_day(),),
@@ -86,17 +99,24 @@ class WyzieClient:
         con.close()
         return n
 
-    def already_searched(self, target: str) -> bool:
-        import sqlite3
+    def cached_search(self, target: str) -> list[SubtitleHit] | None:
+        """Hits from a previous successful search of this target, or None.
 
-        con = sqlite3.connect(self.db_path)
-        cur = con.execute(
-            "SELECT 1 FROM wyzie_ledger WHERE kind = 'search' AND target = ? AND status = 200 LIMIT 1",
+        A search that succeeded but whose downloads crashed must recover on
+        the next run — returning [] would look like 'no subtitles found'
+        and the hit list would be lost for the whole daily budget."""
+        con = db_connect(self.db_path)
+        row = con.execute(
+            """SELECT hits FROM wyzie_ledger
+               WHERE kind = 'search' AND target = ? AND status = 200
+                 AND hits IS NOT NULL
+               ORDER BY ts DESC LIMIT 1""",
             (target,),
-        )
-        found = cur.fetchone() is not None
+        ).fetchone()
         con.close()
-        return found
+        if not row or not row[0]:
+            return None
+        return [SubtitleHit(**h) for h in json.loads(row[0])]
 
     # ---------- search ----------
 
@@ -109,9 +129,10 @@ class WyzieClient:
     ) -> list[SubtitleHit]:
         """Search subtitles. target string is the resume key (id[/s/e])."""
         target = imdb_id if season is None else f"{imdb_id}/{season}/{episode}"
-        if self.already_searched(target):
-            logger.debug("ledger skip: %s", target)
-            return []
+        cached = self.cached_search(target)
+        if cached is not None:
+            logger.debug("ledger hit cache: %s (%d hits)", target, len(cached))
+            return cached
         if self.spent_today() >= self.daily_limit:
             raise WyzieBudgetExceeded(
                 f"daily limit {self.daily_limit} reached ({self.spent_today()} spent)"
@@ -125,10 +146,11 @@ class WyzieClient:
         for attempt in range(retries + 1):
             resp = httpx.get(f"{self.base_url}/search", params=params, timeout=30)
             if resp.status_code == 200:
-                self._log_request("search", target, 200)
                 data = resp.json()
-                items = data if isinstance(data, list) else [data]
-                return [self._hit(i) for i in items if i.get("url")]
+                items = data if isinstance(data, list) else []
+                hits = [self._hit(i) for i in items if isinstance(i, dict) and i.get("url")]
+                self._log_request("search", target, 200, hits)
+                return hits
             if resp.status_code in (429, 503):
                 wait = 5 * (attempt + 1)
                 if resp.status_code == 429:
@@ -142,6 +164,9 @@ class WyzieClient:
             self._log_request("search", target, resp.status_code)
             logger.warning("wyzie %s on %s: %s", resp.status_code, target, resp.text[:200])
             return []
+        # exhausted 429/503: ledgered for observability (status != 200 keeps
+        # budget accounting clean), retried on the next run
+        self._log_request("search", target, 429)
         logger.error("wyzie retries exhausted for %s", target)
         return []
 
@@ -175,20 +200,28 @@ class WyzieClient:
         return sorted(hits, key=score, reverse=True)[0]
 
     def download(self, hit: SubtitleHit, dest: Path) -> Path:
-        """Download subtitle file (URL is direct, key-less — not budget-metered)."""
+        """Download subtitle file (URL is direct, key-less — not budget-metered).
+
+        Written to a .part sibling first, then atomically moved: a download
+        killed mid-stream must never leave a truncated file that the
+        size>0 cache check would serve forever."""
         dest.parent.mkdir(parents=True, exist_ok=True)
         if dest.exists() and dest.stat().st_size > 0:
             return dest
+        tmp = dest.with_suffix(dest.suffix + ".part")
         for attempt in range(3):
             try:
                 with httpx.stream("GET", hit.url, timeout=60, follow_redirects=True) as r:
                     r.raise_for_status()
-                    with open(dest, "wb") as f:
+                    with open(tmp, "wb") as f:
                         for chunk in r.iter_bytes(8192):
                             f.write(chunk)
-                if dest.stat().st_size > 0:
+                if tmp.stat().st_size > 0:
+                    tmp.replace(dest)
                     return dest
             except httpx.HTTPError as e:
                 logger.warning("download retry %s: %s", attempt, e)
                 time.sleep(3 * (attempt + 1))
+            finally:
+                tmp.unlink(missing_ok=True)
         raise RuntimeError(f"download failed: {hit.url}")

@@ -11,10 +11,10 @@ and the graph fragmented. v2:
 """
 import json
 import re
-import sqlite3
 from pathlib import Path
 
 from src.config import settings
+from src.db import connect as db_connect
 
 STOPWORDS = {"the", "a", "an", "of"}
 
@@ -360,7 +360,7 @@ class EntityResolver:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._defer_persist = defer_persist
         self._dirty: set[str] = set()
-        con = sqlite3.connect(self.db_path)
+        con = db_connect(self.db_path)
         con.execute(
             """CREATE TABLE IF NOT EXISTS entities (
                 canonical_id TEXT PRIMARY KEY,
@@ -388,7 +388,7 @@ class EntityResolver:
     # ---------- persistence ----------
 
     def _load(self) -> None:
-        con = sqlite3.connect(self.db_path)
+        con = db_connect(self.db_path)
         for cid, name, etype, aliases_json in con.execute(
             "SELECT canonical_id, canonical_name, entity_type, aliases FROM entities"
         ).fetchall():
@@ -402,7 +402,7 @@ class EntityResolver:
         if self._defer_persist:
             self._dirty.add(cid)
             return
-        con = sqlite3.connect(self.db_path)
+        con = db_connect(self.db_path)
         con.execute(
             """INSERT INTO entities (canonical_id, canonical_name, entity_type, aliases)
                VALUES (?, ?, ?, ?)
@@ -417,7 +417,7 @@ class EntityResolver:
         """Persist deferred entity updates in one transaction."""
         if not self._defer_persist or not self._dirty:
             return
-        con = sqlite3.connect(self.db_path)
+        con = db_connect(self.db_path)
         rows = []
         for cid in self._dirty:
             ent = self._entities.get(cid)
@@ -515,7 +515,7 @@ class EntityResolver:
     def record_conflict(self, subject: str, claim: str, source: str, confidence: float) -> None:
         from datetime import datetime, timezone
 
-        con = sqlite3.connect(self.db_path)
+        con = db_connect(self.db_path)
         con.execute(
             "INSERT INTO conflicts (subject, claim, source, confidence, created_at) VALUES (?, ?, ?, ?, ?)",
             (subject, claim, source, confidence, datetime.now(timezone.utc).isoformat()),

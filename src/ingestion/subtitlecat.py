@@ -5,24 +5,28 @@ so subtitlecat.com is the primary subtitle source. It's scrape-based:
   /index.php?search=<q>  -> rows of detail links
   /subs/<id>/<name>.html -> language table with -en.srt direct links
 Downloads are direct, keyless, and served as application/octet-stream.
-All lookups are cached in the source_cache table so re-runs cost nothing.
+All lookups are cached in the source_cache table so re-runs cost nothing;
+cached misses expire after MISS_TTL_DAYS (site indexing lags behind
+releases, so a miss today can be a hit next week).
 """
+import codecs
 import logging
 import re
-import sqlite3
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import quote, urljoin
+from urllib.parse import urljoin
 
 import httpx
 
 from src.config import settings
+from src.db import connect as db_connect
 
 logger = logging.getLogger(__name__)
 
 BASE = "https://www.subtitlecat.com/"
+MISS_TTL_DAYS = 7
 UA = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -47,7 +51,7 @@ class SubtitlecatClient:
         self._http = httpx.Client(headers=UA, timeout=30, follow_redirects=True)
 
     def _init_cache(self) -> None:
-        con = sqlite3.connect(self.db_path)
+        con = db_connect(self.db_path)
         con.execute(
             """CREATE TABLE IF NOT EXISTS source_cache (
                 cache_key TEXT PRIMARY KEY,
@@ -59,16 +63,16 @@ class SubtitlecatClient:
         con.commit()
         con.close()
 
-    def _cache_get(self, key: str) -> tuple[str, str] | None:
-        con = sqlite3.connect(self.db_path)
+    def _cache_get(self, key: str) -> tuple[str, str, str | None] | None:
+        con = db_connect(self.db_path)
         row = con.execute(
-            "SELECT url, status FROM source_cache WHERE cache_key = ?", (key,)
+            "SELECT url, status, found_at FROM source_cache WHERE cache_key = ?", (key,)
         ).fetchone()
         con.close()
-        return (row[0], row[1]) if row else None
+        return (row[0], row[1], row[2]) if row else None
 
     def _cache_put(self, key: str, url: str, status: str) -> None:
-        con = sqlite3.connect(self.db_path)
+        con = db_connect(self.db_path)
         con.execute(
             """INSERT INTO source_cache (cache_key, url, status, found_at)
                VALUES (?, ?, ?, ?)
@@ -128,7 +132,11 @@ class SubtitlecatClient:
         return urljoin(BASE, m.group(1))
 
     def download(self, url: str, dest: Path, min_cues: int = 150) -> Path:
-        """Download SRT content to dest (cached on disk). English + length verified."""
+        """Download SRT content to dest (cached on disk). English + length verified.
+
+        Written to a .part sibling first, then atomically moved — a killed
+        download must never leave a truncated file the size>0 cache check
+        would serve forever."""
         if dest.exists() and dest.stat().st_size > 0:
             return dest
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -138,13 +146,15 @@ class SubtitlecatClient:
         # subtitlecat sometimes serves HTML error pages — guard
         if b"<html" in r.content[:400].lower():
             raise RuntimeError(f"html instead of srt: {url}")
-        text = r.content.decode("utf-8", errors="ignore")
+        text = _decode_srt(r.content)
         if not _is_mostly_english(text):
             raise RuntimeError(f"non-english srt rejected: {url}")
         n_cues = len(re.findall(r"-->", text))
         if n_cues < min_cues:
             raise RuntimeError(f"truncated srt rejected ({n_cues} cues): {url}")
-        dest.write_bytes(r.content)
+        tmp = dest.with_suffix(dest.suffix + ".part")
+        tmp.write_bytes(r.content)
+        tmp.replace(dest)
         return dest
 
     # ---------- high-level: find english srt for a target ----------
@@ -156,15 +166,21 @@ class SubtitlecatClient:
 
         Cached: subsequent calls with the same target return instantly.
         """
+        if season is not None and episode is None:
+            # scoring and query building all key off SxxEyy
+            logger.warning("season-level search without episode unsupported: %s", title)
+            return None
         cache_key = self._cache_key(title, year, season, episode)
         tag = cache_key.rsplit("|", 1)[-1]
 
         cached = self._cache_get(cache_key)
-        if cached:
-            url, status = cached
-            if status == "miss":
+        if cached and cached[1] == "miss":
+            if _miss_is_fresh(cached[2]):
                 return None
-            release = _release_from_url(url)
+            logger.info("re-searching expired miss: %s", title)
+            cached = None
+        if cached:
+            url, release = cached[0], _release_from_url(cached[0])
         else:
             found = self._search_once(title, year, season, episode)
             if found is None:
@@ -174,19 +190,20 @@ class SubtitlecatClient:
         # deterministic local filename from cache key
         safe = re.sub(r"[^a-z0-9]+", "_", _norm(f"{title}_{tag}")).strip("_")
         dest = settings.RAW_DIR / "subtitlecat" / f"{safe}.srt"
-        if not dest.exists() or dest.stat().st_size == 0:
-            if not self._srt_is_good(url, min_cues=150):
-                # cached URL went stale/broken — drop it and re-search once
-                self.invalidate(title, year, season, episode)
-                fresh = self._search_once(title, year, season, episode)
-                if fresh is None:
-                    return None
-                url, release = fresh
         try:
             self.download(url, dest, min_cues=150)
         except RuntimeError:
+            # cached URL went stale/broken — re-search once before giving up
             self.invalidate(title, year, season, episode)
-            return None
+            fresh = self._search_once(title, year, season, episode)
+            if fresh is None:
+                return None
+            url, release = fresh
+            try:
+                self.download(url, dest, min_cues=150)
+            except RuntimeError:
+                self.invalidate(title, year, season, episode)
+                return None
         return dest, release
 
     def _search_once(
@@ -208,7 +225,7 @@ class SubtitlecatClient:
 
     def invalidate(self, title: str, year: int | None, season: int | None, episode: int | None) -> None:
         """Drop the cached pick for a target (e.g. wrong content guard)."""
-        con = sqlite3.connect(self.db_path)
+        con = db_connect(self.db_path)
         con.execute(
             "DELETE FROM source_cache WHERE cache_key = ?",
             (self._cache_key(title, year, season, episode),),
@@ -249,7 +266,7 @@ class SubtitlecatClient:
                 return False
             if b"<html" in r.content[:400].lower():
                 return False
-            text = r.content.decode("utf-8", errors="ignore")
+            text = _decode_srt(r.content)
             if not _is_mostly_english(text):
                 return False
             n_cues = len(re.findall(r"-->", text))
@@ -331,6 +348,36 @@ class SubtitlecatClient:
 def _norm(s: str) -> str:
     """Lowercase, strip punctuation/spaces — for fuzzy name matching."""
     return re.sub(r"[^a-z0-9]+", " ", s.lower()).strip()
+
+
+def _decode_srt(raw: bytes) -> str:
+    """BOM-aware decode. Non-UTF-8 files (mostly CP1252/Latin-1 fan subs)
+    decode with errors='replace' so mojibake shows up as U+FFFD — the
+    english-probe can then reject it — instead of silently stripping
+    characters mid-word like errors='ignore' did."""
+    for bom, enc in (
+        (codecs.BOM_UTF8, "utf-8-sig"),
+        (codecs.BOM_UTF16_LE, "utf-16-le"),
+        (codecs.BOM_UTF16_BE, "utf-16-be"),
+    ):
+        if raw.startswith(bom):
+            return raw.decode(enc, errors="replace")
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return raw.decode("cp1252", errors="replace")
+
+
+def _miss_is_fresh(found_at: str | None) -> bool:
+    """True while a cached 'miss' is still trusted (site indexing lags
+    releases — a miss from last week deserves a re-search)."""
+    if not found_at:
+        return False
+    try:
+        found = datetime.fromisoformat(found_at)
+    except ValueError:
+        return False
+    return datetime.now(timezone.utc) - found < timedelta(days=MISS_TTL_DAYS)
 
 
 def _is_mostly_english(srt_text: str) -> bool:

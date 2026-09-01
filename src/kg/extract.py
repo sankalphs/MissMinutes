@@ -7,7 +7,6 @@ API budget. Parallel via ThreadPoolExecutor; one worker = one HTTP call.
 """
 import json
 import logging
-import sqlite3
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
@@ -17,6 +16,7 @@ from pydantic import ValidationError
 
 from src.kg.schemas import ChunkExtraction
 from src.llm.client import GMIError, GMIClient
+from src.db import connect as db_connect
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ Rules:
 
 
 def ensure_cache(db_path) -> None:
-    con = sqlite3.connect(db_path)
+    con = db_connect(db_path)
     con.execute(
         """CREATE TABLE IF NOT EXISTS extractions (
             chunk_id TEXT NOT NULL,
@@ -66,7 +66,7 @@ def ensure_cache(db_path) -> None:
 
 def cache_get(db_path, chunk_id: str, model: str) -> tuple[str, Any] | None:
     """Returns (status, raw_parsed_or_none): 'ok'|'fail'."""
-    con = sqlite3.connect(db_path)
+    con = db_connect(db_path)
     row = con.execute(
         "SELECT status, raw FROM extractions WHERE chunk_id = ? AND model = ?",
         (chunk_id, model),
@@ -85,7 +85,7 @@ def cache_get(db_path, chunk_id: str, model: str) -> tuple[str, Any] | None:
 
 
 def cache_put(db_path, chunk_id: str, model: str, status: str, raw: str | None, error: str | None = None) -> None:
-    con = sqlite3.connect(db_path)
+    con = db_connect(db_path)
     con.execute(
         """INSERT INTO extractions (chunk_id, model, status, raw, error, extracted_at)
            VALUES (?, ?, ?, ?, ?, ?)
@@ -152,7 +152,7 @@ def select_chunks(store_db, doc_prefix: str | None = None, only_missing_for: tup
     chars); the LLM needs more context to extract events and relations.
     Window ids are stable: doc#w<N> where N counts windows in the doc.
     """
-    con = sqlite3.connect(store_db)
+    con = db_connect(store_db)
     sql = (
         "SELECT c.chunk_id, c.document_id, c.text, d.title FROM chunks c "
         "JOIN documents d ON d.document_id = c.document_id"
@@ -198,7 +198,7 @@ def select_chunks(store_db, doc_prefix: str | None = None, only_missing_for: tup
         windows.extend(doc_windows)
     if only_missing_for:
         have = set()
-        con = sqlite3.connect(store_db)
+        con = db_connect(store_db)
         qmarks = ",".join("?" for _ in only_missing_for)
         for (cid,) in con.execute(
             f"SELECT chunk_id FROM extractions WHERE status = 'ok' AND model IN ({qmarks})",

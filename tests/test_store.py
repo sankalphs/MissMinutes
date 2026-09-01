@@ -86,10 +86,16 @@ def test_chunks_and_fts(store: Store) -> None:
         ],
     )
     assert store.chunk_count() == 2
-    hits = store.fts_search("TVA OR timeline")
+    hits = store.fts_search("timeline")
     assert len(hits) >= 1
     assert any("sacred timeline" in h["text"] for h in hits)
     assert hits[0]["title"] == "Loki"
+    # user syntax is quoted away term-by-term, never parsed as FTS
+    # operators — an unbalanced quote used to crash the MATCH with
+    # 'fts5: syntax error' and kill the lexical leg
+    assert store.fts_search('TVA "timeline') == []
+    assert store.fts_search("NEAR(") == []
+    assert store.fts_search("   ") == []
     got = store.get_chunk("doc:loki_2021_s01e01#s0000c00001")
     assert got is not None and "Mobius" in got["text"]
 
@@ -160,18 +166,26 @@ def test_store_is_usable_across_threads(store: Store) -> None:
 
 
 def test_wyzie_ledger(store: Store) -> None:
-    """WyzieClient ledger shares the same DB; verify budget accounting."""
-    from src.ingestion.wyzie import WyzieClient
+    """WyzieClient ledger shares the same DB; verify budget accounting and
+    that successful searches cache their hits for crash recovery."""
+    from src.ingestion.wyzie import SubtitleHit, WyzieClient
 
     client = WyzieClient(db_path=store.path)
     day = client._utc_day()
+    hit = SubtitleHit(id="1", url="http://x/a.srt", file_name="a.srt", source="os",
+                      language="en", is_hearing_impaired=False, ai=False, media="movie")
+    client._log_request("search", "tt0848228", 200, [hit])
+    client._log_request("search", "tt0848228/1/1", 429, None)  # exhausted retries
     con = sqlite3.connect(store.path)
     con.execute(
         "INSERT INTO wyzie_ledger (ts, utc_day, kind, target, status) VALUES (?, ?, 'search', ?, 200)",
-        ("t", day, "tt0848228"),
+        ("t", day, "tt0848228_no_hits"),
     )
     con.commit()
     con.close()
-    assert client.spent_today() == 1
-    assert client.already_searched("tt0848228")
-    assert not client.already_searched("tt9140554/1/1")
+
+    assert client.spent_today() == 2  # only status-200 rows count
+    cached = client.cached_search("tt0848228")
+    assert cached and cached[0].url == "http://x/a.srt"
+    assert client.cached_search("tt0848228_no_hits") is None  # pre-hits ledger row
+    assert client.cached_search("tt9140554/1/1") is None  # 429 rows are not cached
