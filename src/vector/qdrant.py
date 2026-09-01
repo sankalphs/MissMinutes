@@ -104,10 +104,12 @@ def _model():
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
-    """Embed with bge-small-en-v1.5 (384d). Loads model once per process."""
+    """Embed with bge-small-en-v1.5 (384d). Loads model once per process.
+    The 2048-char slice is cosmetic — the tokenizer's 512-token window
+    truncates long text regardless; chunks max out around 1400 chars."""
     model = _model()
     vecs = model.encode(
-        [f"passage: {t}" if len(t) < 2048 else f"passage: {t[:2048]}" for t in texts],
+        [f"passage: {t[:2048]}" for t in texts],
         normalize_embeddings=True,
         show_progress_bar=False,
     )
@@ -121,7 +123,10 @@ def embed_query(text: str) -> list[float]:
 
 
 def chunk_point_id(chunk_id: str) -> int:
-    """Stable 63-bit int id from chunk_id (qdrant requires unsigned int)."""
+    """Stable point id from chunk_id: first 15 hex digits = 60 bits, always
+    within Qdrant's unsigned-int (and JSON-safe signed) range. A collision
+    would silently overwrite the earlier chunk's point — the corpus is
+    ~10^5 chunks, birthday risk is negligible at 2^60."""
     import hashlib
 
     return int(hashlib.sha256(chunk_id.encode()).hexdigest()[:15], 16)
