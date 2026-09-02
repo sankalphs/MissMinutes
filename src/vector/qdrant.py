@@ -1,7 +1,8 @@
 """Qdrant vector store — cloud if QDRANT_URL set, local fallback otherwise.
 
 The qdrant-client API is identical for local and cloud, so swapping is just
-an env var. Collection: missminutes_chunks (384d bge-small-en-v1.5 embeddings).
+an env var. Collection missminutes_chunks holds EMBEDDING_MODEL vectors
+(default intfloat/e5-small-v2, 384d, query:/passage: prefixes).
 Chunk payloads carry full provenance (document_id, timeline_id, title,
 cue range) so vector hits map straight to citable evidence (spec:14,20).
 """
