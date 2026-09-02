@@ -21,6 +21,10 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--doc-prefix", type=str, default=None)
+    ap.add_argument("--skip-existing", action="store_true",
+                    help="resume: skip chunks whose point ids already exist "
+                    "in the collection (upsert ids are stable, so the final "
+                    "store is identical either way)")
     args = ap.parse_args()
 
     store = Store()
@@ -40,6 +44,24 @@ def main() -> None:
     rows = cur.fetchall()
     if args.limit:
         rows = rows[: args.limit]
+
+    if args.skip_existing:
+        existing: set[int] = set()
+        offset = None
+        while True:
+            records, offset = vs.client.scroll(
+                collection_name=vs.collection, limit=2048, offset=offset,
+                with_payload=False, with_vectors=False,
+            )
+            existing.update(r.id for r in records)
+            if offset is None:
+                break
+        total = len(rows)
+        rows = [r for r in rows if chunk_point_id(r[0]) not in existing]
+        log.info("skip-existing: %d / %d already indexed, embedding %d", total - len(rows), total, len(rows))
+        if not rows:
+            log.info("qdrant now holds %d points", vs.count())
+            return
 
     log.info("embedding %d chunks...", len(rows))
     batch_size = 64
