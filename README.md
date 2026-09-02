@@ -33,6 +33,11 @@ pytest                 # hermetic suite (live-API tests skip without .env)
 ```
 
 Notes:
+- Retrieval quality is measured offline by `python -m src.eval.retrieval_eval`
+  over a 100-case golden set (`src/eval/fixtures/golden_retrieval.json`) —
+  the real hybrid path with a deterministic planner, no LLM in the loop.
+  Current config scores primary 0.5145 (0.3154 before the 2026-09 sweep:
+  bm25-ranked lexical leg, weighted fusion, cross-encoder rerank, e5-small).
 - Local dev binds `127.0.0.1:7860` (`MM_HOST=0.0.0.0` to expose; HF
   Spaces must set it).
 - Qdrant local-mode holds a process-wide file lock: the app, the
