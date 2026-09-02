@@ -104,13 +104,26 @@ def _model():
     return _MODEL
 
 
+def _prefixes() -> tuple[str, str]:
+    """(query_prefix, passage_prefix) for the configured embedding model.
+    BAAI/bge-* and intfloat/e5-* are contrastive-trained with those literal
+    prefixes; models without prefix training (e.g. all-MiniLM) want none.
+    """
+    name = settings.EMBEDDING_MODEL.lower()
+    if "bge" in name or "e5" in name:
+        return "query: ", "passage: "
+    return "", ""
+
+
 def embed_texts(texts: list[str]) -> list[list[float]]:
-    """Embed with bge-small-en-v1.5 (384d). Loads model once per process.
-    The 2048-char slice is cosmetic — the tokenizer's 512-token window
-    truncates long text regardless; chunks max out around 1400 chars."""
+    """Embed passages with the configured model (dim = settings.EMBEDDING_DIM).
+    Loads model once per process. The 2048-char slice is cosmetic — the
+    tokenizer's 512-token window truncates long text regardless; chunks max
+    out around 1400 chars."""
     model = _model()
+    _, passage_prefix = _prefixes()
     vecs = model.encode(
-        [f"passage: {t[:2048]}" for t in texts],
+        [f"{passage_prefix}{t[:2048]}" for t in texts],
         normalize_embeddings=True,
         show_progress_bar=False,
     )
@@ -119,7 +132,8 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
 
 def embed_query(text: str) -> list[float]:
     model = _model()
-    v = model.encode(f"query: {text}", normalize_embeddings=True, show_progress_bar=False)
+    query_prefix, _ = _prefixes()
+    v = model.encode(f"{query_prefix}{text}", normalize_embeddings=True, show_progress_bar=False)
     return v.tolist()
 
 
