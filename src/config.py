@@ -29,8 +29,9 @@ class Settings:
     QDRANT_URL: str = os.getenv("QDRANT_URL", "")
     QDRANT_API_KEY: str = os.getenv("QDRANT_API_KEY", "")
 
-    # Embeddings
-    EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
+    # Embeddings — e5-small won the golden-set sweep over bge-small and
+    # the 768d bge-base (best semantic leg, lowest query cost, exp/embedding)
+    EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "intfloat/e5-small-v2")
     EMBEDDING_DIM: int = int(os.getenv("EMBEDDING_DIM", "384"))
 
     # App
